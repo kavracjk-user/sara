@@ -1,0 +1,20 @@
+# Memoria de Docker Desktop (WSL 2) para el laboratorio de SARA.
+# Equipo: 20 GB de RAM, i5 de 10.ª generación.
+#
+# Copia este archivo a  %UserProfile%\.wslconfig  y luego ejecuta:  wsl --shutdown
+# (Docker Desktop se reinicia solo o te pide reiniciarlo).
+#
+# Reparto previsto dentro de los 12 GB (SUPOSICIÓN: medir con `docker stats`):
+#   Wazuh ............ hasta ~7,3 GB (indexador 3 + servidor 2 + panel 1 + 5 agentes x 256 MB)
+#   PostgreSQL, Prefect y SARA ... el resto (~4,5 GB)
+# Windows conserva ~8 GB para el sistema, el navegador y el editor.
+[wsl2]
+memory=12GB
+processors=4
+swap=2GB
+
+# El indexador necesita vm.max_map_count=262144 (requisito oficial de Wazuh).
+# SUPOSICIÓN sin verificar: esta línea lo deja fijo entre reinicios. Si no funciona,
+# bórrala y ejecuta tras cada reinicio:
+#   wsl -d docker-desktop sysctl -w vm.max_map_count=262144
+kernelCommandLine = "sysctl.vm.max_map_count=262144"
