@@ -1,0 +1,2 @@
+# Archivos que se montan en contenedores Linux: siempre con fin de linea LF.
+lab/** text eol=lf
