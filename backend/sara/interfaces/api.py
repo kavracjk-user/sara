@@ -9,8 +9,8 @@ from __future__ import annotations
 
 from fastapi import FastAPI, Form, HTTPException
 
-from .models import Caso, Nivel
-from .pipeline import minutos_hasta_decision, registrar_decision
+from sara.dominio.models import Caso, Nivel
+from sara.aplicacion.pipeline import minutos_hasta_decision, registrar_decision
 
 app = FastAPI(title="SARA - interfaz del analista")
 CASOS: dict[str, Caso] = {}  # marcador: reemplazar por PostgreSQL

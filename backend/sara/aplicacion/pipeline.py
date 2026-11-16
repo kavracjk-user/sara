@@ -8,20 +8,22 @@ from __future__ import annotations
 
 from typing import Any, Callable, Iterable, Optional
 
-from .indicators import extraer_indicadores
-from .models import (Activo, Caso, Estado, Importancia, Nivel, PrioridadSugerida,
-                     RegistroPaso, VistaComun, ahora)
-from .normalizer import normalizar
-from .priority import Umbrales, sugerir_prioridad
-from .steps import SinDatoAplicable, ejecutar_paso
+from sara.aplicacion.steps import SinDatoAplicable, ejecutar_paso
+from sara.dominio.indicators import extraer_indicadores
+from sara.dominio.models import (Activo, Caso, Estado, Importancia, Nivel,
+                                 PrioridadSugerida, RegistroPaso, VistaComun, ahora)
+from sara.dominio.priority import Umbrales, sugerir_prioridad
 
 BuscarRelacionadas = Callable[[VistaComun], list[str]]
+# El normalizador es de cada fuente (Wazuh, FortiSIEM...): se inyecta, no se importa.
+Normalizador = Callable[[dict[str, Any], Optional[str]], VistaComun]
 DECISIONES = ("escalar", "descartar", "solicitar_mas_informacion")
 
 
 def investigar(
     doc: dict[str, Any],
     catalogo: dict[str, Activo],
+    normalizar: Normalizador,
     buscar_relacionadas: Optional[BuscarRelacionadas] = None,
     umbrales: Umbrales = Umbrales(),
     id_alerta: Optional[str] = None,

@@ -9,9 +9,10 @@ from __future__ import annotations
 
 from prefect import flow, task  # noqa: E402  (dependencia opcional)
 
-from .models import Activo, Caso
-from .pipeline import investigar
-from .wazuh_client import IndexadorWazuh
+from sara.dominio.models import Activo, Caso
+from sara.adaptadores.wazuh.normalizer import normalizar
+from sara.aplicacion.pipeline import investigar
+from sara.adaptadores.wazuh.indexador import IndexadorWazuh
 
 
 @task(retries=2, retry_delay_seconds=5, timeout_seconds=30)
@@ -25,7 +26,7 @@ def leer_alerta(id_alerta: str) -> dict:
 @task
 def investigar_alerta(doc: dict, catalogo: dict[str, Activo], id_alerta: str) -> Caso:
     indexador = IndexadorWazuh()
-    return investigar(doc, catalogo, buscar_relacionadas=indexador.relacionadas,
+    return investigar(doc, catalogo, normalizar, buscar_relacionadas=indexador.relacionadas,
                       id_alerta=id_alerta)
 
 

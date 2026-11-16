@@ -9,7 +9,7 @@ from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import TimeoutError as FuturoVencido
 from typing import Any, Callable, Optional
 
-from .models import Estado, RegistroPaso, ahora
+from sara.dominio.models import Estado, RegistroPaso, ahora
 
 
 class SinDatoAplicable(Exception):

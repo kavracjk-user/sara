@@ -2,3 +2,8 @@ __pycache__/
 .pytest_cache/
 *.pyc
 .env
+*.pem
+*.key
+node_modules/
+dist/
+.venv/

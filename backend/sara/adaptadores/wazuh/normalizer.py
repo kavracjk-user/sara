@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from typing import Any, Optional
 
-from .models import TipoAlerta, VistaComun
+from sara.dominio.models import TipoAlerta, VistaComun
 
 # campo de la vista común -> ruta en el documento (a confirmar en el laboratorio)
 MAPA_CAMPOS: dict[str, str] = {

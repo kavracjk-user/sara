@@ -5,12 +5,19 @@ from pathlib import Path
 
 import pytest
 
-from sara.indicators import extraer_indicadores, tipo_hash
-from sara.models import Activo, Estado, Importancia, Nivel, TipoAlerta, TipoIndicador
-from sara.normalizer import normalizar
-from sara.pipeline import completitud, investigar, minutos_hasta_decision, registrar_decision
-from sara.priority import Umbrales, sugerir_prioridad
-from sara.steps import SinDatoAplicable, ejecutar_paso
+from sara.adaptadores.wazuh.normalizer import normalizar
+from sara.aplicacion import pipeline as _pipeline
+from sara.aplicacion.pipeline import completitud, minutos_hasta_decision, registrar_decision
+from sara.aplicacion.steps import SinDatoAplicable, ejecutar_paso
+from sara.dominio.indicators import extraer_indicadores, tipo_hash
+from sara.dominio.models import (Activo, Estado, Importancia, Nivel, TipoAlerta,
+                                 TipoIndicador)
+from sara.dominio.priority import Umbrales, sugerir_prioridad
+
+
+def investigar(doc, catalogo, **kw):
+    """Atajo de pruebas: inyecta el normalizador de Wazuh."""
+    return _pipeline.investigar(doc, catalogo, normalizar, **kw)
 
 CATALOGO = {
     "001": Activo("001", "srv-web", "Servidor web de pruebas", Importancia.ALTA),
@@ -265,7 +272,7 @@ def test_completitud():
 def test_no_hay_codigo_de_contencion():
     prohibidos = ("iptables", "firewall-cmd", "active-response", "kill ", "subprocess",
                   "os.system", "block_ip", "isolate", "quarantine")
-    for f in (Path(__file__).parent.parent / "sara").glob("*.py"):
+    for f in (Path(__file__).parent.parent / "sara").rglob("*.py"):
         texto = f.read_text(encoding="utf-8").lower()
         for p in prohibidos:
             # las menciones en docstrings que NIEGAN la contención se permiten
@@ -276,6 +283,6 @@ def test_no_hay_codigo_de_contencion():
 
 
 def test_wazuh_client_solo_lee():
-    texto = (Path(__file__).parent.parent / "sara" / "wazuh_client.py").read_text()
+    texto = (Path(__file__).parent.parent / "sara" / "adaptadores" / "wazuh" / "indexador.py").read_text()
     for metodo in ('method="PUT"', 'method="DELETE"', "_update", "_delete_by_query", "_bulk"):
         assert metodo not in texto

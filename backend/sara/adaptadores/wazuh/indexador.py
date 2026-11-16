@@ -17,7 +17,7 @@ import ssl
 import urllib.request
 from typing import Any, Optional
 
-from .models import VistaComun
+from sara.dominio.models import VistaComun
 
 INDICE = "wazuh-alerts-*"
 
