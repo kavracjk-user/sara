@@ -7,3 +7,8 @@ __pycache__/
 node_modules/
 dist/
 .venv/
+
+# Laboratorio Wazuh: configuración oficial descargada, claves y certificados locales
+lab/wazuh/upstream/
+lab/wazuh/config/
+lab/capturas/crudas/
