@@ -4,8 +4,13 @@ Wazuh **4.14.10** (última versión estable al 2026-11-16), basado en la configu
 oficial [wazuh-docker v4.14.10](https://github.com/wazuh/wazuh-docker/tree/v4.14.10).
 Guía oficial: <https://documentation.wazuh.com/current/deployment-options/docker/wazuh-container.html>
 
-> **Estado: NADA de esta carpeta se ha ejecutado con Docker todavía.** El equipo no
-> tenía Docker ni WSL 2 cuando se escribió. Lo comprobado y lo supuesto está al final.
+> **Estado (2026-11-18):** levantado por primera vez con Docker Desktop 29.9.3 (WSL 2,
+> 11,7 GB y 4 CPU para Docker). Servidor, indexador, panel y los cinco agentes
+> funcionan. Lo comprobado y lo que sigue sin probar está al final.
+
+**Git Bash:** antepón `MSYS_NO_PATHCONV=1` a los `docker compose exec` con rutas
+absolutas (p. ej. `/var/ossec/bin/...`); si no, Git Bash las convierte en rutas de
+Windows. En PowerShell no hace falta.
 
 ## 0. Requisitos (una sola vez)
 
@@ -77,7 +82,8 @@ la API del servidor (acepta `id`, `name`, `ip` y `key`; verificado en la especif
 oficial de la API v4.14.10), escribe cada `client.keys` en `lab/wazuh/claves-agentes/`
 (fuera de Git) y el agente arranca con el registro automático desactivado.
 `python lab/wazuh/registrar_agentes.py --simular` muestra el plan sin Docker.
-**Sin probar contra un servidor real.**
+**Probado (2026-11-18):** `agent_control -l` lista 001–004 y 099 como `Active`, con
+las IP fijas de la tabla.
 
 Antes de arrancar Wazuh, cada agente ejecuta `agentes/base-lab.sh` (mecanismo
 `/entrypoint-scripts/` de la imagen oficial): crea los archivos que usa el guion y sus
@@ -96,8 +102,9 @@ y en `lab/eventos/casos.py`.
 | 5 agentes | 256 MB c/u | `WAZUH_AGENTE_MEM` |
 | **Total** | **≈ 7,3 GB** | |
 
-Los límites son una propuesta sin medir. Con el laboratorio en marcha, `docker stats`
-dice el consumo real; si el indexador se reinicia solo, sube `WAZUH_INDEXER_HEAP` a `2g`
+Medido con `docker stats` el 2026-11-18, recién levantado y sin eventos: indexador
+1,51 GB, servidor 641 MB, panel 250 MB, agentes 16–25 MB cada uno (≈ 2,5 GB en total).
+Es una sola medición en reposo, no bajo carga; si el indexador se reinicia solo, sube `WAZUH_INDEXER_HEAP` a `2g`
 y `WAZUH_INDEXER_MEM` a `4g`. Cuando no uses el panel puedes detenerlo:
 `docker compose --env-file .env -f lab/wazuh/docker-compose.yml stop wazuh.dashboard`.
 
