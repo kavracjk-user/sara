@@ -17,8 +17,11 @@ from typing import Any, Optional
 
 import pytest
 
+from sara.adaptadores.wazuh.tls import abridor
+
 RAIZ_REPO = Path(__file__).resolve().parents[3]
 VARIABLES = ("WAZUH_INDEXER_URL", "WAZUH_INDEXER_USER", "WAZUH_INDEXER_PASS", "WAZUH_CA_CERT")
+OPCIONALES = ("WAZUH_INDEXER_TLS_NOMBRE",)
 
 
 def _cargar_env() -> dict[str, str]:
@@ -30,7 +33,7 @@ def _cargar_env() -> dict[str, str]:
             if linea and not linea.startswith("#") and "=" in linea:
                 clave, _, valor = linea.partition("=")
                 valores[clave.strip()] = valor.strip().strip('"').strip("'")
-    for v in VARIABLES:
+    for v in VARIABLES + OPCIONALES:
         if os.environ.get(v):
             valores[v] = os.environ[v]
     return valores
@@ -39,11 +42,12 @@ def _cargar_env() -> dict[str, str]:
 class ClienteLector:
     """Cliente HTTP mínimo con las credenciales del usuario de solo consulta."""
 
-    def __init__(self, url: str, usuario: str, clave: str, ca: Path) -> None:
+    def __init__(self, url: str, usuario: str, clave: str, ca: Path,
+                 nombre_tls: Optional[str] = None) -> None:
         self.url = url.rstrip("/")
         self.usuario = usuario
         self._auth = "Basic " + base64.b64encode(f"{usuario}:{clave}".encode()).decode()
-        self._ctx = ssl.create_default_context(cafile=str(ca))
+        self._abrir = abridor(ssl.create_default_context(cafile=str(ca)), nombre_tls)
 
     def pedir(self, metodo: str, ruta: str, cuerpo: Optional[Any] = None,
               ndjson: Optional[str] = None) -> tuple[int, str]:
@@ -58,7 +62,7 @@ class ClienteLector:
             f"{self.url}/{ruta.lstrip('/')}", data=datos, method=metodo,
             headers={"Content-Type": tipo, "Authorization": self._auth})
         try:
-            with urllib.request.urlopen(req, timeout=10, context=self._ctx) as r:
+            with self._abrir(req, timeout=10) as r:
                 return r.status, r.read().decode(errors="replace")
         except urllib.error.HTTPError as e:
             return e.code, e.read().decode(errors="replace")
@@ -74,7 +78,7 @@ def lector() -> ClienteLector:
     if not ca.exists():
         pytest.skip(f"No existe el certificado de la CA: {ca}")
     cliente = ClienteLector(env["WAZUH_INDEXER_URL"], env["WAZUH_INDEXER_USER"],
-                            env["WAZUH_INDEXER_PASS"], ca)
+                            env["WAZUH_INDEXER_PASS"], ca, env.get("WAZUH_INDEXER_TLS_NOMBRE"))
     try:
         cliente.pedir("GET", "/")
     except (urllib.error.URLError, OSError) as e:

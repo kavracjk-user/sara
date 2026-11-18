@@ -5,6 +5,8 @@ Credenciales por variables de entorno, nunca en el código:
   WAZUH_INDEXER_USER  usuario con rol de SOLO consulta
   WAZUH_INDEXER_PASS
   WAZUH_CA_CERT       ruta al certificado de la CA del indexador (recomendado)
+  WAZUH_INDEXER_TLS_NOMBRE  nombre del certificado si difiere del host de la URL
+                      (laboratorio: wazuh.indexer; ver tls.py)
 
 Solo usa _search (POST de consulta). No hay ninguna llamada de escritura.
 """
@@ -17,6 +19,7 @@ import ssl
 import urllib.request
 from typing import Any, Optional
 
+from sara.adaptadores.wazuh.tls import abridor
 from sara.dominio.models import VistaComun
 
 INDICE = "wazuh-alerts-*"
@@ -25,13 +28,14 @@ INDICE = "wazuh-alerts-*"
 class IndexadorWazuh:
     def __init__(self, url: Optional[str] = None, usuario: Optional[str] = None,
                  clave: Optional[str] = None, ca_cert: Optional[str] = None,
-                 timeout_s: float = 10.0) -> None:
+                 nombre_tls: Optional[str] = None, timeout_s: float = 10.0) -> None:
         self.url = (url or os.environ["WAZUH_INDEXER_URL"]).rstrip("/")
         usuario = usuario or os.environ["WAZUH_INDEXER_USER"]
         clave = clave or os.environ["WAZUH_INDEXER_PASS"]
         self._auth = "Basic " + base64.b64encode(f"{usuario}:{clave}".encode()).decode()
         ca = ca_cert or os.environ.get("WAZUH_CA_CERT")
         self._ctx = ssl.create_default_context(cafile=ca) if ca else ssl.create_default_context()
+        self._abrir = abridor(self._ctx, nombre_tls or os.environ.get("WAZUH_INDEXER_TLS_NOMBRE"))
         self.timeout_s = timeout_s
 
     def _buscar(self, cuerpo: dict[str, Any]) -> dict[str, Any]:
@@ -41,7 +45,7 @@ class IndexadorWazuh:
             headers={"Content-Type": "application/json", "Authorization": self._auth},
             method="POST",
         )
-        with urllib.request.urlopen(req, timeout=self.timeout_s, context=self._ctx) as r:
+        with self._abrir(req, timeout=self.timeout_s) as r:
             return json.load(r)
 
     def alerta_por_id(self, id_alerta: str) -> Optional[dict[str, Any]]:

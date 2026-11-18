@@ -1,15 +1,6 @@
 """Parches de texto de preparar.py (no necesita Docker ni red)."""
 import preparar as p
 
-CERTS = """nodes:
-  indexer:
-    - name: wazuh.indexer
-      ip: wazuh.indexer
-
-  server:
-    - name: wazuh.manager
-      ip: wazuh.manager
-"""
 WAZUH_YML = """hosts:
   - 1513629884013:
       url: "https://wazuh.manager"
@@ -18,11 +9,6 @@ WAZUH_YML = """hosts:
       run_as: true
 """
 
-
-def test_certificado_del_indexador_incluye_127_0_0_1():
-    certs = p.parchear_certs_yml(CERTS)
-    assert "      ip:\n        - wazuh.indexer\n        - 127.0.0.1\n        - localhost\n\n  server:" in certs
-    assert "ip: wazuh.manager" in certs            # los otros nodos no cambian
 
 
 def test_clave_de_la_api_en_wazuh_yml():
@@ -34,3 +20,15 @@ def test_clave_de_la_api_en_wazuh_yml():
 def test_solo_admin_y_kibanaserver():
     usuarios = p.usuarios_internos("$2y$12$aaa", "$2y$12$bbb")
     assert usuarios.count("hash:") == 2 and "kibanaro" not in usuarios and "readall" not in usuarios
+
+
+def test_clona_sin_convertir_a_crlf():
+    cmd = p.comando_clonar()
+    assert cmd[:5] == ["git", "-c", "core.autocrlf=false", "-c", "core.eol=lf"]
+    assert f"v{p.VERSION_WAZUH}" in cmd
+
+
+def test_escribe_con_lf(tmp_path):
+    ruta = tmp_path / "x.yml"
+    p.escribir_lf(ruta, "a: 1\nb: 2\n")
+    assert ruta.read_bytes() == b"a: 1\nb: 2\n"

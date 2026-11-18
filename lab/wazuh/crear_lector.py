@@ -25,6 +25,9 @@ import urllib.request
 
 from _comun import RAIZ, exigir, leer_env
 
+sys.path.insert(0, str(RAIZ / "backend"))
+from sara.adaptadores.wazuh.tls import abridor  # noqa: E402  (misma verificación TLS que SARA)
+
 ROL = "sara_solo_alertas"
 DEFINICION_ROL = {
     "description": "SARA: solo consulta de alertas (RNF-02)",
@@ -46,7 +49,7 @@ def main() -> None:
 
     url = env["WAZUH_INDEXER_URL"].rstrip("/")
     ca = (RAIZ / env["WAZUH_CA_CERT"]).resolve()
-    ctx = ssl.create_default_context(cafile=str(ca))
+    abrir = abridor(ssl.create_default_context(cafile=str(ca)), env.get("WAZUH_INDEXER_TLS_NOMBRE"))
     auth = "Basic " + base64.b64encode(f"admin:{env['WAZUH_ADMIN_PASS']}".encode()).decode()
 
     def put(ruta: str, cuerpo: dict) -> None:
@@ -54,7 +57,7 @@ def main() -> None:
             f"{url}/_plugins/_security/api/{ruta}", data=json.dumps(cuerpo).encode(),
             headers={"Content-Type": "application/json", "Authorization": auth}, method="PUT")
         try:
-            with urllib.request.urlopen(req, timeout=15, context=ctx) as r:
+            with abrir(req, timeout=15) as r:
                 print(f"[ok] {ruta}: HTTP {r.status}")
         except urllib.error.HTTPError as e:
             raise SystemExit(f"[error] {ruta}: HTTP {e.code} {e.read().decode(errors='replace')}")

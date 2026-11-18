@@ -3,8 +3,9 @@
 Qué hace (nada de esto se sube a Git: `upstream/` y `config/` están en .gitignore):
   1. Clona wazuh-docker en la etiqueta fijada (v4.14.10) en lab/wazuh/upstream/.
   2. Copia single-node/config/ a lab/wazuh/config/.
-  3. Agrega 127.0.0.1 y localhost al certificado del indexador, para que SARA pueda
-     validar el certificado al conectarse desde el equipo anfitrión.
+  3. NO toca certs.yml: wazuh-certs-tool admite un solo nombre por nodo (su lector de
+     YAML no acepta listas). SARA valida el certificado contra `wazuh.indexer` con
+     WAZUH_INDEXER_TLS_NOMBRE (backend/sara/adaptadores/wazuh/tls.py).
   4. Reescribe internal_users.yml solo con `admin` y `kibanaserver`, con las claves
      de .env (se eliminan los usuarios de demostración con claves públicas).
   5. Escribe la clave de la API en wazuh.yml del panel.
@@ -14,8 +15,8 @@ Uso (desde la raíz del repositorio, con Docker en marcha):
     python lab/wazuh/preparar.py --forzar   # la regenera (conserva los certificados)
 
 SUPOSICIONES pendientes de verificar con Docker (ver README.md de esta carpeta):
-  - Ruta de hash.sh dentro de la imagen del indexador.
-  - Que certs.yml acepte una lista en `ip`.
+  - Ruta de hash.sh dentro de la imagen del indexador: CONFIRMADA (2026-11-18).
+  - Que certs.yml acepte una lista en `ip`: FALLÓ (2026-11-18); ya no se usa.
   - Que el indexador cargue internal_users.yml al crear el volumen por primera vez.
 """
 from __future__ import annotations
@@ -25,6 +26,7 @@ import re
 import shutil
 import subprocess
 import sys
+from pathlib import Path
 
 from _comun import LAB_WAZUH, VERSION_WAZUH, exigir, leer_env
 
@@ -42,12 +44,29 @@ def ejecutar(*cmd: str) -> str:
     return res.stdout
 
 
+def escribir_lf(ruta: Path, texto: str) -> None:
+    """Siempre LF: estos archivos se montan en contenedores Linux."""
+    ruta.write_text(texto, encoding="utf-8", newline="\n")
+
+
+def comando_clonar() -> list[str]:
+    # autocrlf=false: con autocrlf=true (habitual en Windows) los archivos que se montan
+    # en Linux salen con CRLF y wazuh-certs-tool falla con «Invalid IP or DNS».
+    return ["git", "-c", "core.autocrlf=false", "-c", "core.eol=lf", "clone", "--depth", "1",
+            "-b", f"v{VERSION_WAZUH}", REPO, str(UPSTREAM)]
+
+
 def clonar_oficial() -> None:
     if (UPSTREAM / "single-node").exists():
         print(f"[=] Ya existe {UPSTREAM.name}/ (v{VERSION_WAZUH}).")
-        return
-    print(f"[+] Clonando wazuh-docker v{VERSION_WAZUH} ...")
-    ejecutar("git", "clone", "--depth", "1", "-b", f"v{VERSION_WAZUH}", REPO, str(UPSTREAM))
+    else:
+        print(f"[+] Clonando wazuh-docker v{VERSION_WAZUH} ...")
+        ejecutar(*comando_clonar())
+    con_crlf = [f for f in (UPSTREAM / "single-node").rglob("*")
+                if f.is_file() and b"\r\n" in f.read_bytes()]
+    if con_crlf:
+        raise SystemExit(f"{UPSTREAM.name}/ tiene fines de línea CRLF ({con_crlf[0].name}, ...). "
+                         f"Borra {UPSTREAM} y vuelve a ejecutar.")
 
 
 def copiar_config(forzar: bool) -> bool:
@@ -67,17 +86,6 @@ def copiar_config(forzar: bool) -> bool:
     print("[+] Copiada la configuración oficial a config/.")
     return True
 
-
-def parchear_certs_yml(texto: str) -> str:
-    """El nodo indexador pasa de `ip: wazuh.indexer` a una lista con 127.0.0.1."""
-    nuevo, n = re.subn(
-        r"^( *)ip: wazuh\.indexer *$",
-        r"\1ip:\n\1  - wazuh.indexer\n\1  - 127.0.0.1\n\1  - localhost",
-        texto, count=1, flags=re.MULTILINE,
-    )
-    if n != 1:
-        raise SystemExit("certs.yml no tiene la forma esperada; revísalo a mano.")
-    return nuevo
 
 
 def usuarios_internos(hash_admin: str, hash_panel: str) -> str:
@@ -137,18 +145,13 @@ def main() -> None:
     if not copiar_config(args.forzar):
         return
 
-    ruta = CONFIG / "certs.yml"
-    ruta.write_text(parchear_certs_yml(ruta.read_text(encoding="utf-8")), encoding="utf-8")
-
     print("[+] Generando hashes con la herramienta del indexador ...")
     ruta = CONFIG / "wazuh_indexer" / "internal_users.yml"
-    ruta.write_text(usuarios_internos(generar_hash(env["WAZUH_ADMIN_PASS"]),
-                                      generar_hash(env["WAZUH_DASHBOARD_PASS"])),
-                    encoding="utf-8")
+    escribir_lf(ruta, usuarios_internos(generar_hash(env["WAZUH_ADMIN_PASS"]),
+                                        generar_hash(env["WAZUH_DASHBOARD_PASS"])))
 
     ruta = CONFIG / "wazuh_dashboard" / "wazuh.yml"
-    ruta.write_text(parchear_wazuh_yml(ruta.read_text(encoding="utf-8"), env["WAZUH_API_PASS"]),
-                    encoding="utf-8")
+    escribir_lf(ruta, parchear_wazuh_yml(ruta.read_text(encoding="utf-8"), env["WAZUH_API_PASS"]))
 
     print("[ok] Listo. Siguiente paso: generar certificados y levantar (ver README.md).")
 
