@@ -4,10 +4,10 @@ Genera, **solo dentro del laboratorio**, los 24 casos del guion de
 [docs/anexo-c-guion-casos.md](../../docs/anexo-c-guion-casos.md) (propuesta pendiente
 del tutor). Solo biblioteca estándar de Python.
 
-> **Estado:** las pruebas sin Docker pasan (`cd lab && python -m pytest -q`) y un ensayo
-> local con `sh` confirmó que cada caso cambia solo sus contenedores y que la limpieza
-> los deja como estaban. **Nunca se ha ejecutado contra Wazuh**: no sabemos todavía
-> qué alertas produce cada caso.
+> **Estado (2026-11-18):** las pruebas sin Docker pasan (`cd lab && python -m pytest -q`).
+> `wazuh-logtest` confirmó las reglas de los 16 casos que generan líneas de log (pares
+> 1–4 y 9–12). **Los 12 pares todavía no se han ejecutado en los agentes**, y los pares
+> 5–8 (cambio de archivos) no se pueden comprobar con logtest.
 
 ## Uso
 
@@ -30,20 +30,42 @@ Con esa franja se capturan después las alertas para comparar con `MAPA_CAMPOS`.
 
 | Pares | Tipo | Mecanismo | Reglas esperadas (hipótesis) |
 |---|---|---|---|
-| 1–4 | Autenticación | Líneas con formato `sshd` en `/var/log/lab/auth.log` del agente | 5760, 5763, 5715, 40112 |
+| 1–4 | Autenticación | Líneas con formato `sshd` en `/var/log/lab/auth.log` del agente | 5760, 5763, 40112 |
 | 5–8 | Cambio de archivos | Cambios reales a archivos del contenedor; respaldo previo en `/lab/respaldo` | 550, 554, 553 |
 | 9, 11, 12 | Actividad de red | Alertas **sintéticas** con formato Suricata en `/var/log/lab/eve.json` | 86601 |
 | 10 | Actividad de red | Líneas **sintéticas** de descarte del cortafuegos en `/var/log/lab/red.log` | 4151 |
 
-Las reglas salen del conjunto oficial de Wazuh v4.14.10. Antes de correr los pares hay
-que pasar una línea de cada tipo por `wazuh-logtest` dentro del servidor:
+Las reglas salen del conjunto oficial de Wazuh v4.14.10. Antes de correr los pares se
+comprueban con `wazuh-logtest`, que solo evalúa líneas en el servidor y no escribe nada:
 
 ```
-docker compose --env-file .env -f lab/wazuh/docker-compose.yml exec wazuh.manager /var/ossec/bin/wazuh-logtest
+python lab/eventos/verificar_logtest.py          # devuelve 1 si algún caso difiere
 ```
 
 Si la regla real no coincide, se corrige `casos.py` **antes** del piloto, no después de
 ver los resultados.
+
+### Resultado de wazuh-logtest (4.14.10, 2026-11-18)
+
+| Casos | Decodificador | Alertas por caso (regla × veces, nivel) |
+|---|---|---|
+| 01A/B | `sshd` | 5760 × 9 (5), 5763 × 1 (10) |
+| 02A/B | `sshd` | 5760 × 9 (5), 5763 × 1 (10), 40112 × 1 (12) |
+| 03A/B | `sshd` | 5760 × 1 (5) |
+| 04A/B | `sshd` | 5760 × 14 (5), 5763 × 1 (10) |
+| 09A/B, 11A/B, 12A/B | `json` | 86601 (3) por cada línea: 5, 3 y 1 |
+| 10A/B | `kernel` + `sshd` | 4101 × 21 (5), 4151 × 1 (10), 5760 × 6 (5) |
+| 05–08 | — | No aplica: eventos del FIM del agente. Sin confirmar. |
+
+Correcciones y observaciones:
+- **Par 2:** se esperaba también 5715; el acceso correcto sale como **40112** (cada
+  evento genera una sola alerta). Se quitó 5715 de `casos.py` antes de cualquier corrida.
+- **Par 10:** 4101 tiene `no_log` en la regla; logtest la muestra como alerta, pero
+  probablemente no llegue al índice. Se confirma en la corrida real.
+- **Campos (para `MAPA_CAMPOS`, objetivo 5):** en las alertas tipo Suricata la IP llega
+  como `src_ip`/`dest_ip`; en `sshd` y `kernel`, como `srcip`/`dstip`.
+- Logtest no reproduce el orden ni el tiempo reales entre agentes: los conteos de la
+  corrida real pueden diferir.
 
 ## Límites que hay que declarar
 

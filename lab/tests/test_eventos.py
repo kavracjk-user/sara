@@ -202,3 +202,9 @@ def test_seleccionar():
     assert len(se.seleccionar(CASOS, "todos")) == 24
     with pytest.raises(SystemExit):
         se.seleccionar(CASOS, "13A")
+
+
+def test_reglas_confirmadas_con_logtest():
+    # wazuh-logtest 4.14.10, 2026-11-18. El acceso correcto del par 2 sale como 40112.
+    assert CASOS["02A"].reglas_esperadas == ("5760", "5763", "40112")
+    assert "5715" not in {r for c in CASOS.values() for r in c.reglas_esperadas}
