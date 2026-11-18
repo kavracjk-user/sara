@@ -25,8 +25,14 @@ Todo desde la raíz del repositorio:
 cp .env.example .env            # y cambia TODAS las claves
 python lab/wazuh/preparar.py
 docker compose --env-file .env -f lab/wazuh/generate-indexer-certs.yml run --rm generator
+docker compose --env-file .env -f lab/wazuh/docker-compose.yml up -d wazuh.indexer wazuh.manager wazuh.dashboard
+python lab/wazuh/registrar_agentes.py        # ids del Anexo C (ver sección 3)
 docker compose --env-file .env -f lab/wazuh/docker-compose.yml up -d
 ```
+
+El orden importa: si los agentes arrancan antes de `registrar_agentes.py`, Docker crea
+una carpeta donde debía ir `client.keys` y el agente no conecta. Arreglo: `down` de los
+agentes, borrar `lab/wazuh/claves-agentes/` y repetir.
 
 La primera vez tarda alrededor de un minuto (según Wazuh). Panel: <https://localhost>
 con el usuario `admin` y `WAZUH_ADMIN_PASS`. El navegador avisará del certificado: es
@@ -50,18 +56,35 @@ escribir en lote o leer otros índices.
 
 ## 3. Agentes
 
-| Contenedor | En el catálogo (Anexo C) |
-|---|---|
-| `srv-web`, `srv-bd`, `pc-analista`, `pc-lab-01` | Sí |
-| `pc-nuevo` | **No**, a propósito |
+Según [docs/anexo-c-guion-casos.md](../../docs/anexo-c-guion-casos.md) (propuesta
+pendiente del tutor):
+
+| Contenedor | Id | IP | En el catálogo de SARA |
+|---|---|---|---|
+| `srv-web` | 001 | 10.10.0.11 | Sí (Alta) |
+| `srv-bd` | 002 | 10.10.0.12 | Sí (Alta) |
+| `pc-analista` | 003 | 10.10.0.13 | Sí (Media) |
+| `pc-lab-01` | 004 | 10.10.0.14 | Sí (Baja) |
+| `pc-nuevo` | 099 | 10.10.0.99 | **No**, a propósito |
 
 Imagen oficial `wazuh/wazuh-agent:4.14.10`, 256 MB cada uno. Respuesta activa
 **desactivada** en los agentes (RNF-01); el servidor oficial tampoco trae ninguna
 respuesta activa habilitada.
 
-**[PENDIENTE] Identificadores.** Wazuh asigna el id por orden de registro (001, 002…).
-Fijar los id del Anexo C y el `099` de `pc-nuevo` exige registrar cada agente con su id
-y entregarle su clave. Falta el Anexo C y poder probarlo con Docker.
+**Ids fijos.** Wazuh asigna el id por orden de registro y ni el registro automático ni
+`manage_agents` permiten elegirlo. `registrar_agentes.py` usa `POST /agents/insert` de
+la API del servidor (acepta `id`, `name`, `ip` y `key`; verificado en la especificación
+oficial de la API v4.14.10), escribe cada `client.keys` en `lab/wazuh/claves-agentes/`
+(fuera de Git) y el agente arranca con el registro automático desactivado.
+`python lab/wazuh/registrar_agentes.py --simular` muestra el plan sin Docker.
+**Sin probar contra un servidor real.**
+
+Antes de arrancar Wazuh, cada agente ejecuta `agentes/base-lab.sh` (mecanismo
+`/entrypoint-scripts/` de la imagen oficial): crea los archivos que usa el guion y sus
+respaldos, para que el primer escaneo los tome como línea base.
+
+Red del laboratorio: `10.10.0.0/24`. Si choca con tu red local, cámbiala en el Compose
+y en `lab/eventos/casos.py`.
 
 ## 4. Memoria
 
@@ -103,5 +126,9 @@ docker compose --env-file .env -f lab/wazuh/docker-compose.yml down -v   # BORRA
 4. Crear rol y usuario por la API de seguridad en vez del panel.
 5. Que el rol sin permisos de clúster baste para `_search` (si no, agregar
    `cluster_composite_ops_ro`, como indica la guía oficial).
-6. Formato `syslog` y rutas de los eventos sintéticos en `agentes/ossec.conf`.
+6. Formato `syslog`/`json` y rutas de los eventos sintéticos en `agentes/ossec.conf`;
+   sintaxis de `restrict` y monitoreo en tiempo real dentro del contenedor.
 7. Límites de memoria y la línea `kernelCommandLine` de `.wslconfig`.
+8. Registro con id fijo: formato de `client.keys`, que se acepten `099` e IP `any`, que
+   la imagen del servidor tenga `curl` y que el agente use `client.keys` con el
+   registro automático desactivado.
