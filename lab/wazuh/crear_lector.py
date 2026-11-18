@@ -8,7 +8,8 @@ SARA nunca usa `admin`; este script vive en lab/, no en backend/.
 
 Usa la API de seguridad del indexador (`_plugins/_security/api`). La documentación
 oficial de Wazuh describe la misma operación desde el panel web (rol con permiso
-`read` sobre `wazuh-alerts*`); hacerlo por API es una SUPOSICIÓN hasta probarlo.
+`read` sobre `wazuh-alerts*`); hacerlo por API se PROBÓ el 2026-11-18
+(201 en rol, usuario y asignación; PR-10 pasa).
 
 Uso (desde la raíz del repositorio, con el laboratorio levantado):
     python lab/wazuh/crear_lector.py

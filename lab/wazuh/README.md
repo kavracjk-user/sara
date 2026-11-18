@@ -53,7 +53,7 @@ python lab/wazuh/crear_lector.py
 cd backend && python -m pytest -m integracion -q -rs
 ```
 
-`crear_lector.py` crea el rol `sara_solo_alertas` (permiso `read` solo sobre
+**Probado (2026-11-18): 14/14.** `crear_lector.py` crea el rol `sara_solo_alertas` (permiso `read` solo sobre
 `wazuh-alerts-*`) y el usuario `WAZUH_INDEXER_USER`. La prueba PR-10
 (`backend/tests/integracion/test_pr10_solo_lectura.py`) comprueba que ese usuario
 consulta alertas y que recibe **403** al indexar, actualizar, borrar, crear índices,
@@ -124,18 +124,21 @@ docker compose --env-file .env -f lab/wazuh/docker-compose.yml down -v   # BORRA
   (`docs/ref/configuration/environment-variables.md`).
 - Rol de solo lectura = permiso `read` sobre `wazuh-alerts*` (guía de RBAC de Wazuh, vía panel).
 
-**Suposiciones a confirmar al levantar:**
-1. `certs.yml` acepta una lista en `ip` (para incluir `127.0.0.1` en el certificado).
-   Si falla, la conexión de SARA por `https://127.0.0.1:9200` no validará el certificado.
-2. Ruta de `hash.sh` en la imagen del indexador y que `internal_users.yml` se cargue al
-   crear el volumen por primera vez (si no, `admin` conservaría la clave por defecto).
-3. Que el servidor aplique `API_PASSWORD` al usuario `wazuh-wui` al arrancar.
-4. Crear rol y usuario por la API de seguridad en vez del panel.
-5. Que el rol sin permisos de clúster baste para `_search` (si no, agregar
-   `cluster_composite_ops_ro`, como indica la guía oficial).
-6. Formato `syslog`/`json` y rutas de los eventos sintéticos en `agentes/ossec.conf`;
-   sintaxis de `restrict` y monitoreo en tiempo real dentro del contenedor.
-7. Límites de memoria y la línea `kernelCommandLine` de `.wslconfig`.
-8. Registro con id fijo: formato de `client.keys`, que se acepten `099` e IP `any`, que
-   la imagen del servidor tenga `curl` y que el agente use `client.keys` con el
-   registro automático desactivado.
+**Suposiciones, comprobadas al levantar el laboratorio (2026-11-18):**
+
+| # | Suposición | Estado | Evidencia |
+|---|---|---|---|
+| 1 | `certs.yml` acepta una lista en `ip` para incluir `127.0.0.1` | **Falló** | `wazuh-certs-tool` solo lee un nombre por nodo («Invalid IP or DNS»). Se reemplazó por `WAZUH_INDEXER_TLS_NOMBRE=wazuh.indexer`: se conecta a 127.0.0.1 y valida el certificado contra ese nombre. |
+| 2 | Ruta de `hash.sh` y carga de `internal_users.yml` al crear el volumen | Confirmada | `admin` con la clave de `.env`: 200; `admin:admin` y `kibanaro:kibanaro`: 401. |
+| 3 | El servidor aplica `API_PASSWORD` a `wazuh-wui` | Confirmada | `registrar_agentes.py` obtuvo el token con esa clave. |
+| 4 | Rol y usuario por la API de seguridad en vez del panel | Confirmada | 201 en rol, usuario y asignación. |
+| 5 | Un rol sin permisos de clúster basta para `_search` | Confirmada | PR-10: `_search` 200 (191 alertas); 14/14 pruebas. |
+| 6 | Formatos y rutas de los logs, sintaxis de `restrict`, FIM en tiempo real | Parcial | logcollector lee los 3 archivos; logtest decodifica `sshd`, `kernel` y `json`; FIM en tiempo real iniciado (6012). **Sin probar:** que las líneas escritas en los archivos lleguen al índice y que `restrict` limite lo que se vigila (requiere correr los pares). |
+| 7 | Límites de memoria y `kernelCommandLine` de `.wslconfig` | Parcial | `vm.max_map_count = 262144`. Consumo en reposo ≈ 2,5 GB, por debajo de los límites. **Sin probar** bajo carga. |
+| 8 | Registro con id fijo (5 suposiciones de agentes) | Confirmada | Ver `registrar_agentes.py` y la sección 3. |
+
+**Problemas encontrados y corregidos al levantar:**
+- El clon oficial salía con CRLF (`autocrlf=true`); ahora se clona con `core.autocrlf=false`.
+- Python 3.13 rechaza la CA oficial (no trae `keyUsage`); `contexto_tls()` quita solo
+  `VERIFY_X509_STRICT` y mantiene la verificación de cadena y nombre.
+- En Git Bash hay que usar `MSYS_NO_PATHCONV=1` con `docker compose exec`.

@@ -21,11 +21,10 @@ Orden de uso (desde la raíz del repositorio):
     docker compose --env-file .env -f lab/wazuh/docker-compose.yml up -d
     python lab/wazuh/registrar_agentes.py --simular   # muestra el plan sin Docker
 
-SIN PROBAR contra un servidor real. Suposiciones:
-  - formato de client.keys: «ID NOMBRE IP CLAVE» por línea;
-  - que «099» y la IP «any» sean aceptados por /agents/insert;
-  - que la imagen del servidor tenga `curl`;
-  - que `wazuh-wui` tenga el permiso agent:create.
+PROBADO con Wazuh 4.14.10 (2026-11-18): se confirmaron el formato de client.keys
+(«ID NOMBRE IP CLAVE»), que /agents/insert acepta «099» e IP «any», que el servidor
+trae `curl`, que `wazuh-wui` puede crear agentes y que el agente conecta solo con
+client.keys y sin registro automático. Los cinco quedan `Active`.
 """
 from __future__ import annotations
 

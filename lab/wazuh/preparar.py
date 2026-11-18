@@ -14,10 +14,10 @@ Uso (desde la raíz del repositorio, con Docker en marcha):
     python lab/wazuh/preparar.py            # no pisa una config/ existente
     python lab/wazuh/preparar.py --forzar   # la regenera (conserva los certificados)
 
-SUPOSICIONES pendientes de verificar con Docker (ver README.md de esta carpeta):
+Suposiciones, ya comprobadas con Docker (ver README.md de esta carpeta):
   - Ruta de hash.sh dentro de la imagen del indexador: CONFIRMADA (2026-11-18).
   - Que certs.yml acepte una lista en `ip`: FALLÓ (2026-11-18); ya no se usa.
-  - Que el indexador cargue internal_users.yml al crear el volumen por primera vez.
+  - Que el indexador cargue internal_users.yml al crear el volumen: CONFIRMADA.
 """
 from __future__ import annotations
 
