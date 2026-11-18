@@ -12,3 +12,5 @@ dist/
 lab/wazuh/upstream/
 lab/wazuh/config/
 lab/capturas/crudas/
+lab/wazuh/claves-agentes/
+lab/corridas/

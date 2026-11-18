@@ -12,11 +12,15 @@
 #   4. Memoria Java del indexador parametrizada (el original fija 1g).
 #   5. `restart: unless-stopped` en vez de `always`, para que el laboratorio no
 #      arranque solo al abrir Docker Desktop y consuma memoria sin querer.
-#   6. Cinco agentes con la imagen oficial wazuh/wazuh-agent.
+#   6. Cinco agentes con la imagen oficial wazuh/wazuh-agent, con los id del Anexo C
+#      fijados por lab/wazuh/registrar_agentes.py (registro automático desactivado).
+#   7. Red del laboratorio 10.10.0.0/24 con IP fijas para los agentes.
 #
-# Uso (desde la raíz del repositorio; ver lab/wazuh/README.md):
+# Uso (desde la raíz del repositorio; orden completo en lab/wazuh/README.md):
 #   python lab/wazuh/preparar.py
 #   docker compose --env-file .env -f lab/wazuh/generate-indexer-certs.yml run --rm generator
+#   docker compose --env-file .env -f lab/wazuh/docker-compose.yml up -d wazuh.indexer wazuh.manager wazuh.dashboard
+#   python lab/wazuh/registrar_agentes.py
 #   docker compose --env-file .env -f lab/wazuh/docker-compose.yml up -d
 name: sara-lab-wazuh
 
@@ -26,12 +30,10 @@ x-agente: &agente
   mem_limit: ${WAZUH_AGENTE_MEM:-256m}
   depends_on:
     - wazuh.manager
-  volumes:
-    # Configuración del agente del laboratorio (respuesta activa DESACTIVADA, RNF-01).
-    - ./agentes/ossec.conf:/wazuh-config-mount/etc/ossec.conf:ro
-    # Carpetas donde los scripts de lab/ escriben los eventos sintéticos.
-    - /var/log/lab
-    - /lab/archivos
+  # Cada agente declara sus volúmenes (Compose no fusiona listas):
+  #   - agentes/ossec.conf: configuración del laboratorio (respuesta activa DESACTIVADA, RNF-01)
+  #   - agentes/base-lab.sh: crea los archivos base del guion antes de arrancar Wazuh
+  #   - claves-agentes/<nombre>/client.keys: clave con el id del Anexo C (fuera de Git)
 
 services:
   wazuh.manager:
@@ -129,44 +131,90 @@ services:
       - wazuh.manager:wazuh.manager
 
   # ---- Agentes de prueba (contenedores ligeros, no máquinas virtuales) ----
-  # Los cuatro primeros están en el catálogo de activos (Anexo C); «pc-nuevo»
-  # NO está en el catálogo a propósito.
-  # PENDIENTE: Wazuh asigna el id por orden de registro. Fijar los id del Anexo C
-  # (y el 099 de pc-nuevo) requiere un paso de registro explícito que aún no existe.
-  srv-web:
+  # Id e IP según docs/anexo-c-guion-casos.md (PROPUESTA pendiente del tutor).
+  # «pc-nuevo» (099) tiene agente en Wazuh pero NO está en el catálogo de SARA.
+  # Si falta claves-agentes/<nombre>/client.keys, Docker crea una CARPETA en su
+  # lugar y el agente no conecta: ejecuta antes lab/wazuh/registrar_agentes.py.
+  srv-web:   # id 001
     <<: *agente
     hostname: srv-web
     environment:
       - WAZUH_MANAGER_SERVER=wazuh.manager
       - WAZUH_AGENT_NAME=srv-web
+    networks:
+      default:
+        ipv4_address: 10.10.0.11
+    volumes:
+      - ./agentes/ossec.conf:/wazuh-config-mount/etc/ossec.conf:ro
+      - ./claves-agentes/srv-web/client.keys:/wazuh-config-mount/etc/client.keys:ro
+      - ./agentes/base-lab.sh:/entrypoint-scripts/10-base-lab.sh:ro
 
-  srv-bd:
+  srv-bd:   # id 002
     <<: *agente
     hostname: srv-bd
     environment:
       - WAZUH_MANAGER_SERVER=wazuh.manager
       - WAZUH_AGENT_NAME=srv-bd
+    networks:
+      default:
+        ipv4_address: 10.10.0.12
+    volumes:
+      - ./agentes/ossec.conf:/wazuh-config-mount/etc/ossec.conf:ro
+      - ./claves-agentes/srv-bd/client.keys:/wazuh-config-mount/etc/client.keys:ro
+      - ./agentes/base-lab.sh:/entrypoint-scripts/10-base-lab.sh:ro
 
-  pc-analista:
+  pc-analista:   # id 003
     <<: *agente
     hostname: pc-analista
     environment:
       - WAZUH_MANAGER_SERVER=wazuh.manager
       - WAZUH_AGENT_NAME=pc-analista
+    networks:
+      default:
+        ipv4_address: 10.10.0.13
+    volumes:
+      - ./agentes/ossec.conf:/wazuh-config-mount/etc/ossec.conf:ro
+      - ./claves-agentes/pc-analista/client.keys:/wazuh-config-mount/etc/client.keys:ro
+      - ./agentes/base-lab.sh:/entrypoint-scripts/10-base-lab.sh:ro
 
-  pc-lab-01:
+  pc-lab-01:   # id 004
     <<: *agente
     hostname: pc-lab-01
     environment:
       - WAZUH_MANAGER_SERVER=wazuh.manager
       - WAZUH_AGENT_NAME=pc-lab-01
+    networks:
+      default:
+        ipv4_address: 10.10.0.14
+    volumes:
+      - ./agentes/ossec.conf:/wazuh-config-mount/etc/ossec.conf:ro
+      - ./claves-agentes/pc-lab-01/client.keys:/wazuh-config-mount/etc/client.keys:ro
+      - ./agentes/base-lab.sh:/entrypoint-scripts/10-base-lab.sh:ro
 
-  pc-nuevo:
+  pc-nuevo:   # id 099
     <<: *agente
     hostname: pc-nuevo
     environment:
       - WAZUH_MANAGER_SERVER=wazuh.manager
       - WAZUH_AGENT_NAME=pc-nuevo
+    networks:
+      default:
+        ipv4_address: 10.10.0.99
+    volumes:
+      - ./agentes/ossec.conf:/wazuh-config-mount/etc/ossec.conf:ro
+      - ./claves-agentes/pc-nuevo/client.keys:/wazuh-config-mount/etc/client.keys:ro
+      - ./agentes/base-lab.sh:/entrypoint-scripts/10-base-lab.sh:ro
+
+networks:
+  default:
+    ipam:
+      config:
+        # Red del laboratorio. Las IP «internas» del guion (.31, .32, .41, .42) son
+        # de esta red. Las IP dinámicas (servidor, indexador, panel) salen de la
+        # mitad alta para no chocar con las fijas de los agentes.
+        # Si 10.10.0.0/24 choca con tu red local, cámbiala aquí y en lab/eventos/casos.py.
+        - subnet: 10.10.0.0/24
+          ip_range: 10.10.0.128/25
 
 volumes:
   wazuh_api_configuration:
