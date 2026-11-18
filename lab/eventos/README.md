@@ -55,13 +55,14 @@ ver los resultados.
 | 04A/B | `sshd` | 5760 × 14 (5), 5763 × 1 (10) |
 | 09A/B, 11A/B, 12A/B | `json` | 86601 (3) por cada línea: 5, 3 y 1 |
 | 10A/B | `kernel` + `sshd` | 4101 × 21 (5), 4151 × 1 (10), 5760 × 6 (5) |
-| 05–08 | — | No aplica: eventos del FIM del agente. Sin confirmar. |
+| 05–08 | — | No aplica a logtest (eventos del FIM del agente). **Confirmados en la corrida real**: 550, 554 y 553 (ver tabla de la corrida). |
 
 Correcciones y observaciones:
 - **Par 2:** se esperaba también 5715; el acceso correcto sale como **40112**. La
   hipótesis NO se ajusta (decisión del autor): ver «Limitaciones observadas».
-- **Par 10:** 4101 tiene `no_log` en la regla; logtest la muestra como alerta, pero
-  probablemente no llegue al índice. Se confirma en la corrida real.
+- **Par 10:** 4101 tiene `no_log` en la regla; logtest la muestra como alerta, pero en
+  la corrida real **no llegó ninguna 4101 al índice** (0 de 22 por caso). Solo se
+  indexa 4151.
 - **Campos (para `MAPA_CAMPOS`, objetivo 5):** en las alertas tipo Suricata la IP llega
   como `src_ip`/`dest_ip`; en `sshd` y `kernel`, como `srcip`/`dstip`.
 - Logtest no reproduce el orden ni el tiempo reales entre agentes: los conteos de la
@@ -91,7 +92,7 @@ hasta el inicio del caso siguiente.
 
 Otras observaciones de la corrida:
 - Ninguna alerta 4101 llegó al índice (la regla tiene `no_log`): en el par 10 solo se
-  indexa 4151.
+  indexa 4151. Confirmado, no supuesto.
 - Las escrituras en `/var/log/lab/` no generaron alertas de integridad: `restrict`
   limita el FIM a las rutas del guion.
 - Campos reales: Suricata → `data.src_ip`/`data.dest_ip`; `sshd` y `kernel` →
@@ -119,7 +120,8 @@ esta corrida no hubo errores de implementación: ningún caso se modificó ni se
   de cambios. Los scripts solo producen el cambio de archivo.
 - **Par 6.** Sin VirusTotal ni ClamAV, Wazuh solo ve «archivo creado» con su hash; no
   sabe que es EICAR. En Windows, el antivirus bloquea el archivo si se crea fuera del
-  contenedor (pasó en el ensayo local); dentro de WSL 2 no debería, pero está sin probar.
+  contenedor (pasó en el ensayo local). Dentro del contenedor **no** lo bloqueó: en la
+  corrida real el archivo se creó (68 bytes), sigue ahí y generó la alerta 554.
 - **La limpieza no borra alertas.** Deshace los cambios en los contenedores; las
   alertas indexadas quedan (solo lectura y evidencia). Restaurar archivos en los pares
   5, 7 y 8 genera alertas propias; su franja está en el manifiesto `limpiar`.
