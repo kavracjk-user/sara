@@ -125,6 +125,16 @@ esta corrida no hubo errores de implementación: ningún caso se modificó ni se
 - **La limpieza no borra alertas.** Deshace los cambios en los contenedores; las
   alertas indexadas quedan (solo lectura y evidencia). Restaurar archivos en los pares
   5, 7 y 8 genera alertas propias; su franja está en el manifiesto `limpiar`.
+- **La limpieza también genera alertas** (comprobado el 2026-11-18): restaurar
+  `passwd`, `shadow`, `nginx.conf` y `pg_hba.conf` da 550 × 4; recrear `auth.log` y
+  `syslog`, 554 × 2; borrar los archivos de `/tmp`, 553 × 2; y vaciar los registros de
+  `/var/log/lab/`, **592** («Log file size reduced», nivel 8) × 11. Quedan en el índice
+  después de la franja de la corrida; al capturar, usa los manifiestos `ejecutar`.
+- **Verificación de la limpieza (2026-11-18):** tras `limpiar todos`, en los cinco
+  agentes los 6 archivos del guion tienen el mismo sha256 que su respaldo, los registros
+  de `/var/log/lab/` están vacíos y no queda nada en `/tmp/prueba_*.com`. Se compara el
+  contenido: la fecha de modificación cambia y los archivos recreados (par 8) tienen
+  otro inodo.
 - **Pausas.** Entre casos se espera 10, 70 o 250 s para que las reglas de frecuencia
   (`ignore` de 5763 y 4151, ventana de 40112) puedan volver a dispararse.
   `--sin-pausa` las omite, con el riesgo de que no salgan.
