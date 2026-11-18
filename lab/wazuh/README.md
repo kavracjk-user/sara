@@ -133,7 +133,7 @@ docker compose --env-file .env -f lab/wazuh/docker-compose.yml down -v   # BORRA
 | 3 | El servidor aplica `API_PASSWORD` a `wazuh-wui` | Confirmada | `registrar_agentes.py` obtuvo el token con esa clave. |
 | 4 | Rol y usuario por la API de seguridad en vez del panel | Confirmada | 201 en rol, usuario y asignación. |
 | 5 | Un rol sin permisos de clúster basta para `_search` | Confirmada | PR-10: `_search` 200 (191 alertas); 14/14 pruebas. |
-| 6 | Formatos y rutas de los logs, sintaxis de `restrict`, FIM en tiempo real | Parcial | logcollector lee los 3 archivos; logtest decodifica `sshd`, `kernel` y `json`; FIM en tiempo real iniciado (6012). **Sin probar:** que las líneas escritas en los archivos lleguen al índice y que `restrict` limite lo que se vigila (requiere correr los pares). |
+| 6 | Formatos y rutas de los logs, sintaxis de `restrict`, FIM en tiempo real | Confirmada | Corrida real de los 24 casos: las líneas de `auth.log`, `red.log` y `eve.json` llegan al índice; FIM en tiempo real genera 550/554/553 en las rutas del guion; las escrituras en `/var/log/lab/` no generan alertas de integridad (`restrict` funciona). |
 | 7 | Límites de memoria y `kernelCommandLine` de `.wslconfig` | Parcial | `vm.max_map_count = 262144`. Consumo en reposo ≈ 2,5 GB, por debajo de los límites. **Sin probar** bajo carga. |
 | 8 | Registro con id fijo (5 suposiciones de agentes) | Confirmada | Ver `registrar_agentes.py` y la sección 3. |
 

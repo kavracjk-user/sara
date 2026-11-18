@@ -4,10 +4,10 @@ Genera, **solo dentro del laboratorio**, los 24 casos del guion de
 [docs/anexo-c-guion-casos.md](../../docs/anexo-c-guion-casos.md) (propuesta pendiente
 del tutor). Solo biblioteca estándar de Python.
 
-> **Estado (2026-11-18):** las pruebas sin Docker pasan (`cd lab && python -m pytest -q`).
-> `wazuh-logtest` confirmó las reglas de los 16 casos que generan líneas de log (pares
-> 1–4 y 9–12). **Los 12 pares todavía no se han ejecutado en los agentes**, y los pares
-> 5–8 (cambio de archivos) no se pueden comprobar con logtest.
+> **Estado (2026-11-18):** los 24 casos se ejecutaron una vez en el laboratorio
+> (Wazuh 4.14.10) y sus alertas se capturaron con el usuario de solo consulta. 22 de 24
+> disparan todas las reglas esperadas; en el par 2 no aparece 5715 (ver «Limitaciones
+> observadas»). Las alertas y los archivos de esa corrida **no se han limpiado**.
 
 ## Uso
 
@@ -30,7 +30,7 @@ Con esa franja se capturan después las alertas para comparar con `MAPA_CAMPOS`.
 
 | Pares | Tipo | Mecanismo | Reglas esperadas (hipótesis) |
 |---|---|---|---|
-| 1–4 | Autenticación | Líneas con formato `sshd` en `/var/log/lab/auth.log` del agente | 5760, 5763, 40112 |
+| 1–4 | Autenticación | Líneas con formato `sshd` en `/var/log/lab/auth.log` del agente | 5760, 5763, 5715, 40112 |
 | 5–8 | Cambio de archivos | Cambios reales a archivos del contenedor; respaldo previo en `/lab/respaldo` | 550, 554, 553 |
 | 9, 11, 12 | Actividad de red | Alertas **sintéticas** con formato Suricata en `/var/log/lab/eve.json` | 86601 |
 | 10 | Actividad de red | Líneas **sintéticas** de descarte del cortafuegos en `/var/log/lab/red.log` | 4151 |
@@ -50,7 +50,7 @@ ver los resultados.
 | Casos | Decodificador | Alertas por caso (regla × veces, nivel) |
 |---|---|---|
 | 01A/B | `sshd` | 5760 × 9 (5), 5763 × 1 (10) |
-| 02A/B | `sshd` | 5760 × 9 (5), 5763 × 1 (10), 40112 × 1 (12) |
+| 02A/B | `sshd` | 5760 × 9 (5), 5763 × 1 (10), 40112 × 1 (12); **5715 no aparece** |
 | 03A/B | `sshd` | 5760 × 1 (5) |
 | 04A/B | `sshd` | 5760 × 14 (5), 5763 × 1 (10) |
 | 09A/B, 11A/B, 12A/B | `json` | 86601 (3) por cada línea: 5, 3 y 1 |
@@ -58,14 +58,55 @@ ver los resultados.
 | 05–08 | — | No aplica: eventos del FIM del agente. Sin confirmar. |
 
 Correcciones y observaciones:
-- **Par 2:** se esperaba también 5715; el acceso correcto sale como **40112** (cada
-  evento genera una sola alerta). Se quitó 5715 de `casos.py` antes de cualquier corrida.
+- **Par 2:** se esperaba también 5715; el acceso correcto sale como **40112**. La
+  hipótesis NO se ajusta (decisión del autor): ver «Limitaciones observadas».
 - **Par 10:** 4101 tiene `no_log` en la regla; logtest la muestra como alerta, pero
   probablemente no llegue al índice. Se confirma en la corrida real.
 - **Campos (para `MAPA_CAMPOS`, objetivo 5):** en las alertas tipo Suricata la IP llega
   como `src_ip`/`dest_ip`; en `sshd` y `kernel`, como `srcip`/`dstip`.
 - Logtest no reproduce el orden ni el tiempo reales entre agentes: los conteos de la
   corrida real pueden diferir.
+
+## Corrida real (2026-11-18, 05:00–05:13 UTC)
+
+`python lab/eventos/sara_eventos.py ejecutar todos` y luego
+`python lab/eventos/capturar_alertas.py` (usuario `sara_lector`, solo lectura). Alertas
+crudas en `lab/capturas/crudas/` (fuera de Git). Ventana de cada caso: desde su inicio
+hasta el inicio del caso siguiente.
+
+| Par | Esperadas (hipótesis) | Disparadas en A | Disparadas en B | ¿Coincide? |
+|---|---|---|---|---|
+| 1 | 5760, 5763 | srv-web: 5760 × 9, 5763 | srv-bd: 5760 × 9, 5763 | Sí |
+| 2 | 5760, 5763, 5715, 40112 | srv-web: 5760 × 9, 5763, 40112 | srv-bd: 5760 × 9, 5763, 40112 | **No: falta 5715** |
+| 3 | 5760 | pc-lab-01: 5760 | pc-lab-01: 5760 | Sí |
+| 4 | 5760, 5763 | pc-analista: 5760 × 9, 5763; srv-web y pc-lab-01: 5760 × 3 | igual que A | Sí |
+| 5 | 550 | srv-web: 550 `/etc/passwd` | srv-bd: 550 `/etc/shadow` | Sí |
+| 6 | 554 | pc-lab-01: 554 `/tmp/prueba_a.com` | pc-analista: 554 `/tmp/prueba_b.com` | Sí |
+| 7 | 550 | srv-web: 550 `nginx.conf` | srv-bd: 550 `pg_hba.conf` | Sí |
+| 8 | 553 | srv-web: 553 `/var/log/auth.log` | srv-bd: 553 `/var/log/syslog` | Sí |
+| 9 | 86601 | srv-web: 86601 × 5 | srv-bd: 86601 × 5 | Sí |
+| 10 | 4151, 5760 | srv-bd: 4151; srv-web y pc-lab-01: 5760 × 3 | srv-web: 4151; srv-bd y pc-lab-01: 5760 × 3 | Sí |
+| 11 | 86601 | pc-lab-01: 86601 × 3 | pc-analista: 86601 × 3 | Sí |
+| 12 | 86601 | pc-nuevo (099): 86601 | pc-nuevo (099): 86601 | Sí |
+
+Otras observaciones de la corrida:
+- Ninguna alerta 4101 llegó al índice (la regla tiene `no_log`): en el par 10 solo se
+  indexa 4151.
+- Las escrituras en `/var/log/lab/` no generaron alertas de integridad: `restrict`
+  limita el FIM a las rutas del guion.
+- Campos reales: Suricata → `data.src_ip`/`data.dest_ip`; `sshd` y `kernel` →
+  `data.srcip`/`data.dstip`; FIM → `syscheck.path`, `syscheck.event`, `syscheck.sha256_after`.
+
+## Limitaciones observadas
+
+| Caso | Regla esperada | Regla real | Causa probable |
+|---|---|---|---|
+| 02A, 02B | 5715 (acceso correcto) | ninguna 5715; el acceso correcto produce **40112** (nivel 12) | Wazuh genera una sola alerta por evento: para la línea `Accepted password`, la regla hija 40112 (`if_group authentication_success` + `if_matched_group authentication_failures`, misma IP, 240 s) coincide y reemplaza a 5715. Comprobado igual con `wazuh-logtest` y en el índice. |
+
+Decisión del autor (2026-11-18): si un caso no dispara la regla esperada, **no** se
+adapta el caso, el Anexo C ni la pauta; se registra aquí. Solo se corrigen errores de
+implementación del script (p. ej. una línea mal formada) y se repite solo ese caso. En
+esta corrida no hubo errores de implementación: ningún caso se modificó ni se repitió.
 
 ## Límites que hay que declarar
 

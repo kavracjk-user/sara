@@ -170,9 +170,9 @@ def construir(ahora: datetime) -> dict[str, Caso]:
                 situacion="Fallos repetidos seguidos de un acceso correcto, misma IP externa",
                 pasos=(_anexar(host, AUTH_LOG, lineas),),
                 limpieza=(_vaciar(host, AUTH_LOG),),
-                # wazuh-logtest 4.14.10 (2026-11-18): el acceso correcto sale como 40112
-                # (nivel 12), no como 5715: cada evento produce una sola alerta.
-                reglas_esperadas=("5760", "5763", "40112"), pausa_s=PAUSA_FRECUENCIA_S)
+                # Hipótesis original; NO se ajusta a lo observado (decisión del autor). Lo
+                # observado (40112 en lugar de 5715) va como limitación en README.md.
+                reglas_esperadas=("5760", "5763", "5715", "40112"), pausa_s=PAUSA_FRECUENCIA_S)
 
     # 3. Un único fallo de un usuario legítimo, sin repetición.
     #    IP de origen: equipos de usuario de la red del laboratorio (dato superficial).

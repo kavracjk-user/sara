@@ -204,7 +204,7 @@ def test_seleccionar():
         se.seleccionar(CASOS, "13A")
 
 
-def test_reglas_confirmadas_con_logtest():
-    # wazuh-logtest 4.14.10, 2026-11-18. El acceso correcto del par 2 sale como 40112.
-    assert CASOS["02A"].reglas_esperadas == ("5760", "5763", "40112")
-    assert "5715" not in {r for c in CASOS.values() for r in c.reglas_esperadas}
+
+def test_hipotesis_original_del_par_2_sin_ajustar():
+    # Decisión del autor: las reglas esperadas no se adaptan a lo observado.
+    assert CASOS["02A"].reglas_esperadas == ("5760", "5763", "5715", "40112")
