@@ -1,0 +1,98 @@
+{
+ "syscheck": {
+  "size_before": "575",
+  "uname_after": "root",
+  "mtime_after": "2026-11-18T05:00:00",
+  "size_after": "642",
+  "gid_after": "0",
+  "md5_before": "8d08bad97cc90b6402fa09bbe36172ed",
+  "sha256_before": "43161230417741e1a751a83e8a49062b4a6b764be9439215ba70ed22aff1b77a",
+  "mtime_before": "2026-11-16T11:55:26",
+  "mode": "realtime",
+  "path": "/etc/passwd",
+  "sha1_after": "20dfb45bba5cbee1391329cf4276e1a3efd73355",
+  "changed_attributes": [
+   "size",
+   "mtime",
+   "md5",
+   "sha1",
+   "sha256"
+  ],
+  "gname_after": "root",
+  "uid_after": "0",
+  "perm_after": "rw-r--r--",
+  "event": "modified",
+  "md5_after": "b5c36d477ec8eb6dd0669ee11c751ad2",
+  "sha1_before": "d170066d3225172fa112d91613ec0659f9b66735",
+  "sha256_after": "e2884fdecbad4507a4c0d93f126b95836102fde8bfb94ac9c446ba5e11cddc45",
+  "inode_after": 126526
+ },
+ "agent": {
+  "ip": "10.10.0.11",
+  "name": "srv-web",
+  "id": "001"
+ },
+ "manager": {
+  "name": "wazuh.manager"
+ },
+ "rule": {
+  "mail": false,
+  "level": 7,
+  "pci_dss": [
+   "11.5"
+  ],
+  "hipaa": [
+   "164.312.c.1",
+   "164.312.c.2"
+  ],
+  "tsc": [
+   "PI1.4",
+   "PI1.5",
+   "CC6.1",
+   "CC6.8",
+   "CC7.2",
+   "CC7.3"
+  ],
+  "description": "Integrity checksum changed.",
+  "groups": [
+   "ossec",
+   "syscheck",
+   "syscheck_entry_modified",
+   "syscheck_file"
+  ],
+  "nist_800_53": [
+   "SI.7"
+  ],
+  "gdpr": [
+   "II_5.1.f"
+  ],
+  "firedtimes": 1,
+  "mitre": {
+   "technique": [
+    "Stored Data Manipulation"
+   ],
+   "id": [
+    "T1565.001"
+   ],
+   "tactic": [
+    "Impact"
+   ]
+  },
+  "id": "550",
+  "gpg13": [
+   "4.11"
+  ]
+ },
+ "decoder": {
+  "name": "syscheck_integrity_changed"
+ },
+ "full_log": "File '/etc/passwd' modified\nMode: realtime\nChanged attributes: size,mtime,md5,sha1,sha256\nSize changed from '575' to '642'\nOld modification time was: '1794830126', now it is '1794978000'\nOld md5sum was: '8d08bad97cc90b6402fa09bbe36172ed'\nNew md5sum is : 'b5c36d477ec8eb6dd0669ee11c751ad2'\nOld sha1sum was: 'd170066d3225172fa112d91613ec0659f9b66735'\nNew sha1sum is : '20dfb45bba5cbee1391329cf4276e1a3efd73355'\nOld sha256sum was: '43161230417741e1a751a83e8a49062b4a6b764be9439215ba70ed22aff1b77a'\nNew sha256sum is : 'e2884fdecbad4507a4c0d93f126b95836102fde8bfb94ac9c446ba5e11cddc45'\n",
+ "input": {
+  "type": "log"
+ },
+ "@timestamp": "2026-11-18T05:00:00.873Z",
+ "location": "syscheck",
+ "id": "1794978000.747661",
+ "timestamp": "2026-11-18T05:00:00.873+0000",
+ "_id": "ZVMG7aEBs5MtR6RawTkP"
+}

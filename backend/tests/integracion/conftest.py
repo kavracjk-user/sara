@@ -83,3 +83,15 @@ def lector() -> ClienteLector:
     except (urllib.error.URLError, OSError) as e:
         pytest.skip(f"El indexador no responde en {cliente.url}: {e}")
     return cliente
+
+
+@pytest.fixture(scope="session")
+def indexador(lector):
+    """El adaptador real de SARA con el usuario de solo consulta (no el administrador)."""
+    from sara.adaptadores.wazuh.indexador import IndexadorWazuh
+
+    env = _cargar_env()
+    return IndexadorWazuh(env["WAZUH_INDEXER_URL"], env["WAZUH_INDEXER_USER"],
+                          env["WAZUH_INDEXER_PASS"],
+                          str((RAIZ_REPO / env["WAZUH_CA_CERT"]).resolve()),
+                          nombre_tls=env.get("WAZUH_INDEXER_TLS_NOMBRE"))

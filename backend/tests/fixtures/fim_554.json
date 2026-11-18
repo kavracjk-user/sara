@@ -1,0 +1,75 @@
+{
+ "syscheck": {
+  "uname_after": "root",
+  "mtime_after": "2026-11-18T05:00:21",
+  "size_after": "68",
+  "gid_after": "0",
+  "mode": "realtime",
+  "path": "/tmp/prueba_a.com",
+  "sha1_after": "3395856ce81f2b7382dee72602f798b642f14140",
+  "gname_after": "root",
+  "uid_after": "0",
+  "perm_after": "rw-r--r--",
+  "event": "added",
+  "md5_after": "44d88612fea8a8f36de82e1278abb02f",
+  "sha256_after": "275a021bbfb6489e54d471899f7db9d1663fc695ec2fe2a2c4538aabf651fd0f",
+  "inode_after": 138174
+ },
+ "agent": {
+  "ip": "10.10.0.14",
+  "name": "pc-lab-01",
+  "id": "004"
+ },
+ "manager": {
+  "name": "wazuh.manager"
+ },
+ "rule": {
+  "firedtimes": 1,
+  "mail": false,
+  "level": 5,
+  "pci_dss": [
+   "11.5"
+  ],
+  "hipaa": [
+   "164.312.c.1",
+   "164.312.c.2"
+  ],
+  "tsc": [
+   "PI1.4",
+   "PI1.5",
+   "CC6.1",
+   "CC6.8",
+   "CC7.2",
+   "CC7.3"
+  ],
+  "description": "File added to the system.",
+  "groups": [
+   "ossec",
+   "syscheck",
+   "syscheck_entry_added",
+   "syscheck_file"
+  ],
+  "id": "554",
+  "nist_800_53": [
+   "SI.7"
+  ],
+  "gpg13": [
+   "4.11"
+  ],
+  "gdpr": [
+   "II_5.1.f"
+  ]
+ },
+ "decoder": {
+  "name": "syscheck_new_entry"
+ },
+ "full_log": "File '/tmp/prueba_a.com' added\nMode: realtime\n",
+ "input": {
+  "type": "log"
+ },
+ "@timestamp": "2026-11-18T05:00:21.774Z",
+ "location": "syscheck",
+ "id": "1794978021.750104",
+ "timestamp": "2026-11-18T05:00:21.774+0000",
+ "_id": "Z1MH7aEBs5MtR6RaBzlU"
+}

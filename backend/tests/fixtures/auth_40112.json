@@ -1,0 +1,89 @@
+{
+ "predecoder": {
+  "hostname": "srv-web",
+  "program_name": "sshd",
+  "timestamp": "Nov 18 04:52:47"
+ },
+ "agent": {
+  "ip": "10.10.0.11",
+  "name": "srv-web",
+  "id": "001"
+ },
+ "manager": {
+  "name": "wazuh.manager"
+ },
+ "data": {
+  "srcip": "203.0.113.11",
+  "dstuser": "operador",
+  "srcport": "50200"
+ },
+ "rule": {
+  "mail": true,
+  "level": 12,
+  "pci_dss": [
+   "10.2.4",
+   "10.2.5",
+   "11.4"
+  ],
+  "hipaa": [
+   "164.312.b"
+  ],
+  "tsc": [
+   "CC6.1",
+   "CC6.8",
+   "CC7.2",
+   "CC7.3"
+  ],
+  "description": "Multiple authentication failures followed by a success.",
+  "groups": [
+   "syslog",
+   "attacks"
+  ],
+  "nist_800_53": [
+   "AU.14",
+   "AC.7",
+   "SI.4"
+  ],
+  "frequency": 2,
+  "gdpr": [
+   "IV_35.7.d",
+   "IV_32.2"
+  ],
+  "firedtimes": 1,
+  "mitre": {
+   "technique": [
+    "Valid Accounts",
+    "Brute Force"
+   ],
+   "id": [
+    "T1078",
+    "T1110"
+   ],
+   "tactic": [
+    "Defense Evasion",
+    "Persistence",
+    "Privilege Escalation",
+    "Initial Access",
+    "Credential Access"
+   ]
+  },
+  "id": "40112",
+  "gpg13": [
+   "7.1",
+   "7.8"
+  ]
+ },
+ "decoder": {
+  "parent": "sshd",
+  "name": "sshd"
+ },
+ "full_log": "Nov 18 04:52:47 srv-web sshd[4100]: Accepted password for operador from 203.0.113.11 port 50200 ssh2",
+ "input": {
+  "type": "log"
+ },
+ "@timestamp": "2026-11-18T04:54:58.154Z",
+ "location": "/var/log/lab/auth.log",
+ "id": "1794977698.722479",
+ "timestamp": "2026-11-18T04:54:58.154+0000",
+ "_id": "MFMC7aEBs5MtR6RaJTlR"
+}

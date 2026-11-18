@@ -18,10 +18,12 @@ import os
 import urllib.request
 from typing import Any, Optional
 
+from sara.adaptadores.wazuh.normalizer import MAPA_CAMPOS
 from sara.adaptadores.wazuh.tls import abridor, contexto_tls
 from sara.dominio.models import VistaComun
 
 INDICE = "wazuh-alerts-*"
+CAMPOS_IP_ORIGEN = MAPA_CAMPOS["ip_origen"]
 
 
 class IndexadorWazuh:
@@ -73,13 +75,17 @@ class IndexadorWazuh:
 
     def relacionadas(self, vista: VistaComun, ventana: str = "1h",
                      maximo: int = 20) -> list[str]:
-        """Alertas que comparten IP de origen o agente dentro de la ventana
-        (la ventana definitiva se fija y documenta en 4.5.2)."""
+        """`_id` de las alertas que comparten IP de origen o agente dentro de la ventana
+        (la ventana definitiva se fija y documenta en 4.5.2). La propia alerta se
+        excluye por su `_id` del índice, el mismo identificador que usa toda SARA."""
         if not vista.marca_tiempo:
             raise ValueError("No hay marca de tiempo para acotar la ventana.")
+        if not vista.id_alerta:
+            raise ValueError("Sin _id de la alerta no se puede excluir de sus relacionadas.")
         compartidos = []
         if vista.ip_origen:
-            compartidos.append({"term": {"data.srcip": vista.ip_origen}})
+            # La IP de origen va en srcip (sshd, cortafuegos) o src_ip (tipo Suricata).
+            compartidos += [{"term": {campo: vista.ip_origen}} for campo in CAMPOS_IP_ORIGEN]
         if vista.agente_id:
             compartidos.append({"term": {"agent.id": vista.agente_id}})
         if not compartidos:
@@ -87,7 +93,7 @@ class IndexadorWazuh:
         res = self._buscar({
             "size": maximo, "_source": False,
             "query": {"bool": {
-                "must_not": [{"ids": {"values": [vista.id_alerta or ""]}}],
+                "must_not": [{"ids": {"values": [vista.id_alerta]}}],
                 "should": compartidos, "minimum_should_match": 1,
                 "filter": [{"range": {"@timestamp": {
                     "gte": f"{vista.marca_tiempo}||-{ventana}",

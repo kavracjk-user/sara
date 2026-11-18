@@ -1,0 +1,55 @@
+{
+ "agent": {
+  "ip": "10.10.0.14",
+  "name": "pc-lab-01",
+  "id": "004"
+ },
+ "manager": {
+  "name": "wazuh.manager"
+ },
+ "data": {
+  "src_ip": "10.10.0.14",
+  "src_port": "52000",
+  "event_type": "alert",
+  "alert": {
+   "severity": "2",
+   "signature_id": "9000002",
+   "rev": "1",
+   "gid": "1",
+   "signature": "SARA-LAB consulta DNS a dominio de prueba",
+   "action": "allowed",
+   "category": "Misc activity"
+  },
+  "dest_ip": "10.10.0.53",
+  "proto": "UDP",
+  "dns": {
+   "rrname": "servicio-a.test",
+   "type": "query",
+   "rrtype": "A"
+  },
+  "dest_port": "53",
+  "timestamp": "2026-11-18T04:52:35.000000+0000"
+ },
+ "rule": {
+  "firedtimes": 11,
+  "mail": false,
+  "level": 3,
+  "description": "Suricata: Alert - SARA-LAB consulta DNS a dominio de prueba",
+  "groups": [
+   "ids",
+   "suricata"
+  ],
+  "id": "86601"
+ },
+ "decoder": {
+  "name": "json"
+ },
+ "input": {
+  "type": "log"
+ },
+ "@timestamp": "2026-11-18T05:10:08.423Z",
+ "location": "/var/log/lab/eve.json",
+ "id": "1794978608.775499",
+ "timestamp": "2026-11-18T05:10:08.423+0000",
+ "_id": "iVMQ7aEBs5MtR6RaADlQ"
+}

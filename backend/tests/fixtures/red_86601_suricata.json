@@ -1,0 +1,50 @@
+{
+ "agent": {
+  "ip": "10.10.0.11",
+  "name": "srv-web",
+  "id": "001"
+ },
+ "manager": {
+  "name": "wazuh.manager"
+ },
+ "data": {
+  "src_ip": "10.10.0.11",
+  "src_port": "41000",
+  "event_type": "alert",
+  "alert": {
+   "severity": "2",
+   "signature_id": "9000001",
+   "rev": "1",
+   "gid": "1",
+   "signature": "SARA-LAB conexion saliente a puerto no habitual",
+   "action": "allowed",
+   "category": "Potentially Bad Traffic"
+  },
+  "dest_ip": "203.0.113.50",
+  "proto": "TCP",
+  "dest_port": "4444",
+  "timestamp": "2026-11-18T04:52:35.000000+0000"
+ },
+ "rule": {
+  "firedtimes": 1,
+  "mail": false,
+  "level": 3,
+  "description": "Suricata: Alert - SARA-LAB conexion saliente a puerto no habitual",
+  "groups": [
+   "ids",
+   "suricata"
+  ],
+  "id": "86601"
+ },
+ "decoder": {
+  "name": "json"
+ },
+ "input": {
+  "type": "log"
+ },
+ "@timestamp": "2026-11-18T05:01:26.123Z",
+ "location": "/var/log/lab/eve.json",
+ "id": "1794978086.755284",
+ "timestamp": "2026-11-18T05:01:26.123+0000",
+ "_id": "bVMI7aEBs5MtR6RaCTkr"
+}

@@ -1,0 +1,73 @@
+{
+ "agent": {
+  "ip": "10.10.0.12",
+  "name": "srv-bd",
+  "id": "002"
+ },
+ "data": {
+  "protocol": "TCP",
+  "srcip": "10.10.0.41",
+  "dstport": "6379",
+  "action": "DROP",
+  "srcport": "40020",
+  "dstip": "10.10.0.12"
+ },
+ "rule": {
+  "mail": false,
+  "level": 10,
+  "pci_dss": [
+   "1.4",
+   "10.6.1"
+  ],
+  "hipaa": [
+   "164.312.a.1",
+   "164.312.b"
+  ],
+  "tsc": [
+   "CC6.7",
+   "CC6.8",
+   "CC7.2",
+   "CC7.3"
+  ],
+  "description": "Multiple Firewall drop events from same source.",
+  "groups": [
+   "firewall",
+   "multiple_drops"
+  ],
+  "nist_800_53": [
+   "SC.7",
+   "AU.6"
+  ],
+  "frequency": 18,
+  "gdpr": [
+   "IV_35.7.d"
+  ],
+  "firedtimes": 1,
+  "id": "4151",
+  "gpg13": [
+   "4.12"
+  ]
+ },
+ "full_log": "Nov 18 04:52:55 srv-bd kernel: [1020.000000] DROP IN=eth0 OUT= SRC=10.10.0.41 DST=10.10.0.12 LEN=44 TOS=0x00 PREC=0x00 TTL=64 ID=20020 PROTO=TCP SPT=40020 DPT=6379 WINDOW=1024 RES=0x00 SYN URGP=0",
+ "id": "1794978107.767051",
+ "timestamp": "2026-11-18T05:01:47.407+0000",
+ "predecoder": {
+  "hostname": "srv-bd",
+  "program_name": "kernel",
+  "timestamp": "Nov 18 04:52:55"
+ },
+ "previous_output": "Nov 18 04:52:54 srv-bd kernel: [1019.000000] DROP IN=eth0 OUT= SRC=10.10.0.41 DST=10.10.0.12 LEN=44 TOS=0x00 PREC=0x00 TTL=64 ID=20019 PROTO=TCP SPT=40019 DPT=5900 WINDOW=1024 RES=0x00 SYN URGP=0\nNov 18 04:52:51 srv-bd kernel: [1016.000000] DROP IN=eth0 OUT= SRC=10.10.0.41 DST=10.10.0.12 LEN=44 TOS=0x00 PREC=0x00 TTL=64 ID=20016 PROTO=TCP SPT=40016 DPT=3306 WINDOW=1024 RES=0x00 SYN URGP=0\nNov 18 04:52:49 srv-bd kernel: [1014.000000] DROP IN=eth0 OUT= SRC=10.10.0.41 DST=10.10.0.12 LEN=44 TOS=0x00 PREC=0x00 TTL=64 ID=20014 PROTO=TCP SPT=40014 DPT=995 WINDOW=1024 RES=0x00 SYN URGP=0\nNov 18 04:52:44 srv-bd kernel: [1009.000000] DROP IN=eth0 OUT= SRC=10.10.0.41 DST=10.10.0.12 LEN=44 TOS=0x00 PREC=0x00 TTL=64 ID=20009 PROTO=TCP SPT=40009 DPT=143 WINDOW=1024 RES=0x00 SYN URGP=0\nNov 18 04:52:42 srv-bd kernel: [1007.000000] DROP IN=eth0 OUT= SRC=10.10.0.41 DST=10.10.0.12 LEN=44 TOS=0x00 PREC=0x00 TTL=64 ID=20007 PROTO=TCP SPT=40007 DPT=135 WINDOW=1024 RES=0x00 SYN URGP=0\nNov 18 04:52:46 srv-bd kernel: [1011.000000] DROP IN=eth0 OUT= SRC=10.10.0.41 DST=10.10.0.12 LEN=44 TOS=0x00 PREC=0x00 TTL=64 ID=20011 PROTO=TCP SPT=40011 DPT=443 WINDOW=1024 RES=0x00 SYN URGP=0\nNov 18 04:52:47 srv-bd kernel: [1012.000000] DROP IN=eth0 OUT= SRC=10.10.0.41 DST=10.10.0.12 LEN=44 TOS=0x00 PREC=0x00 TTL=64 ID=20012 PROTO=TCP SPT=40012 DPT=445 WINDOW=1024 RES=0x00 SYN URGP=0\nNov 18 04:52:48 srv-bd kernel: [1013.000000] DROP IN=eth0 OUT= SRC=10.10.0.41 DST=10.10.0.12 LEN=44 TOS=0x00 PREC=0x00 TTL=64 ID=20013 PROTO=TCP SPT=40013 DPT=993 WINDOW=1024 RES=0x00 SYN URGP=0\nNov 18 04:52:43 srv-bd kernel: [1008.000000] DROP IN=eth0 OUT= SRC=10.10.0.41 DST=10.10.0.12 LEN=44 TOS=0x00 PREC=0x00 TTL=64 ID=20008 PROTO=TCP SPT=40008 DPT=139 WINDOW=1024 RES=0x00 SYN URGP=0\nNov 18 04:52:45 srv-bd kernel: [1010.000000] DROP IN=eth0 OUT= SRC=10.10.0.41 DST=10.10.0.12 LEN=44 TOS=0x00 PREC=0x00 TTL=64 ID=20010 PROTO=TCP SPT=40010 DPT=389 WINDOW=1024 RES=0x00 SYN URGP=0\nNov 18 04:52:41 srv-bd kernel: [1006.000000] DROP IN=eth0 OUT= SRC=10.10.0.41 DST=10.10.0.12 LEN=44 TOS=0x00 PREC=0x00 TTL=64 ID=20006 PROTO=TCP SPT=40006 DPT=110 WINDOW=1024 RES=0x00 SYN URGP=0",
+ "manager": {
+  "name": "wazuh.manager"
+ },
+ "decoder": {
+  "parent": "kernel",
+  "name": "kernel"
+ },
+ "input": {
+  "type": "log"
+ },
+ "@timestamp": "2026-11-18T05:01:47.407Z",
+ "location": "/var/log/lab/red.log",
+ "_id": "fVMI7aEBs5MtR6RaXzke"
+}

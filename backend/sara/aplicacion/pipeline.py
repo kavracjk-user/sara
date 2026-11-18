@@ -11,7 +11,8 @@ from typing import Any, Callable, Iterable, Optional
 from sara.aplicacion.steps import SinDatoAplicable, ejecutar_paso
 from sara.dominio.indicators import extraer_indicadores
 from sara.dominio.models import (Activo, Caso, Estado, Importancia, Nivel,
-                                 PrioridadSugerida, RegistroPaso, VistaComun, ahora)
+                                 PrioridadSugerida, RegistroPaso, TipoAlerta, VistaComun,
+                                 ahora)
 from sara.dominio.priority import Umbrales, sugerir_prioridad
 
 BuscarRelacionadas = Callable[[VistaComun], list[str]]
@@ -81,8 +82,18 @@ def investigar(
 
     # P5. Prioridad sugerida
     importancia = caso.activo.importancia if caso.activo else Importancia.NO_CATALOGADO
-    caso.prioridad = sugerir_prioridad(
-        caso.vista.regla_nivel, importancia, len(caso.alertas_relacionadas), umbrales)
+    if caso.vista.tipo_alerta is TipoAlerta.DESCONOCIDO:
+        # La clasificación solo cubre reglas catalogadas: lo no clasificado no entra
+        # en la matriz y nunca se lee como prioridad baja.
+        caso.prioridad = PrioridadSugerida(
+            Nivel.INSUFICIENTE,
+            [f"La regla {caso.vista.regla_id or '(sin id)'} no está catalogada: no se "
+             "pudo determinar el tipo de alerta.",
+             "Resultado: información insuficiente (no equivale a riesgo bajo)."],
+            None, importancia, False)
+    else:
+        caso.prioridad = sugerir_prioridad(
+            caso.vista.regla_nivel, importancia, len(caso.alertas_relacionadas), umbrales)
 
     fallidos = [p for p in caso.pasos if p.estado is Estado.FALLIDO]
     if fallidos:

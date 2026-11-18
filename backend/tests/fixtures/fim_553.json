@@ -1,0 +1,89 @@
+{
+ "syscheck": {
+  "uname_after": "root",
+  "mtime_after": "2026-11-18T04:43:56",
+  "size_after": "37",
+  "gid_after": "0",
+  "mode": "realtime",
+  "path": "/var/log/auth.log",
+  "sha1_after": "8320f302b7bd2a4ed553f02659eb8ef6364fc2f7",
+  "gname_after": "root",
+  "uid_after": "0",
+  "perm_after": "rw-r--r--",
+  "event": "deleted",
+  "md5_after": "5f8c9593a87f5a9a92934641046f41aa",
+  "sha256_after": "3a7a6a97834c1b9e9d43fe265d2fefb39cf69317a46703f593286491fd96c8b0",
+  "inode_after": 137430
+ },
+ "agent": {
+  "ip": "10.10.0.11",
+  "name": "srv-web",
+  "id": "001"
+ },
+ "manager": {
+  "name": "wazuh.manager"
+ },
+ "rule": {
+  "mail": false,
+  "level": 7,
+  "pci_dss": [
+   "11.5"
+  ],
+  "hipaa": [
+   "164.312.c.1",
+   "164.312.c.2"
+  ],
+  "tsc": [
+   "PI1.4",
+   "PI1.5",
+   "CC6.1",
+   "CC6.8",
+   "CC7.2",
+   "CC7.3"
+  ],
+  "description": "File deleted.",
+  "groups": [
+   "ossec",
+   "syscheck",
+   "syscheck_entry_deleted",
+   "syscheck_file"
+  ],
+  "nist_800_53": [
+   "SI.7"
+  ],
+  "gdpr": [
+   "II_5.1.f"
+  ],
+  "firedtimes": 1,
+  "mitre": {
+   "technique": [
+    "File Deletion",
+    "Data Destruction"
+   ],
+   "id": [
+    "T1070.004",
+    "T1485"
+   ],
+   "tactic": [
+    "Defense Evasion",
+    "Impact"
+   ]
+  },
+  "id": "553",
+  "gpg13": [
+   "4.11"
+  ]
+ },
+ "decoder": {
+  "name": "syscheck_deleted"
+ },
+ "full_log": "File '/var/log/auth.log' deleted\nMode: realtime\n",
+ "input": {
+  "type": "log"
+ },
+ "@timestamp": "2026-11-18T05:01:03.578Z",
+ "location": "syscheck",
+ "id": "1794978063.753941",
+ "timestamp": "2026-11-18T05:01:03.578+0000",
+ "_id": "a1MH7aEBs5MtR6Raszk4"
+}
