@@ -9,7 +9,6 @@ from __future__ import annotations
 import base64
 import json
 import os
-import ssl
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -17,7 +16,7 @@ from typing import Any, Optional
 
 import pytest
 
-from sara.adaptadores.wazuh.tls import abridor
+from sara.adaptadores.wazuh.tls import abridor, contexto_tls
 
 RAIZ_REPO = Path(__file__).resolve().parents[3]
 VARIABLES = ("WAZUH_INDEXER_URL", "WAZUH_INDEXER_USER", "WAZUH_INDEXER_PASS", "WAZUH_CA_CERT")
@@ -47,7 +46,7 @@ class ClienteLector:
         self.url = url.rstrip("/")
         self.usuario = usuario
         self._auth = "Basic " + base64.b64encode(f"{usuario}:{clave}".encode()).decode()
-        self._abrir = abridor(ssl.create_default_context(cafile=str(ca)), nombre_tls)
+        self._abrir = abridor(contexto_tls(str(ca)), nombre_tls)
 
     def pedir(self, metodo: str, ruta: str, cuerpo: Optional[Any] = None,
               ndjson: Optional[str] = None) -> tuple[int, str]:

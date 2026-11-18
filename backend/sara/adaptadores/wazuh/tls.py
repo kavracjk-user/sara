@@ -37,6 +37,20 @@ class ManejadorConNombre(urllib.request.HTTPSHandler):
         return self.do_open(clase, req)
 
 
+def contexto_tls(ca: Optional[str] = None) -> ssl.SSLContext:
+    """Contexto que verifica cadena y nombre, sin el perfil X.509 estricto.
+
+    Python 3.13 activa VERIFY_X509_STRICT por defecto, y la CA que genera
+    wazuh-certs-tool (4.14) no trae la extensión keyUsage: la conexión falla con
+    «CA cert does not include key usage extension». Solo se quita esa bandera; la
+    cadena de confianza (CERT_REQUIRED) y el nombre (check_hostname) se siguen
+    verificando.
+    """
+    ctx = ssl.create_default_context(cafile=ca) if ca else ssl.create_default_context()
+    ctx.verify_flags &= ~ssl.VERIFY_X509_STRICT
+    return ctx
+
+
 def abridor(ctx: ssl.SSLContext, nombre_tls: Optional[str] = None) -> Abrir:
     """Devuelve una función `abrir(req, timeout=...)` equivalente a urlopen."""
     if not nombre_tls:

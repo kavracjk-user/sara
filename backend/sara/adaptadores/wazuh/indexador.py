@@ -15,11 +15,10 @@ from __future__ import annotations
 import base64
 import json
 import os
-import ssl
 import urllib.request
 from typing import Any, Optional
 
-from sara.adaptadores.wazuh.tls import abridor
+from sara.adaptadores.wazuh.tls import abridor, contexto_tls
 from sara.dominio.models import VistaComun
 
 INDICE = "wazuh-alerts-*"
@@ -34,7 +33,7 @@ class IndexadorWazuh:
         clave = clave or os.environ["WAZUH_INDEXER_PASS"]
         self._auth = "Basic " + base64.b64encode(f"{usuario}:{clave}".encode()).decode()
         ca = ca_cert or os.environ.get("WAZUH_CA_CERT")
-        self._ctx = ssl.create_default_context(cafile=ca) if ca else ssl.create_default_context()
+        self._ctx = contexto_tls(ca)
         self._abrir = abridor(self._ctx, nombre_tls or os.environ.get("WAZUH_INDEXER_TLS_NOMBRE"))
         self.timeout_s = timeout_s
 

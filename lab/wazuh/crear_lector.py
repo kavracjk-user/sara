@@ -18,7 +18,6 @@ from __future__ import annotations
 
 import base64
 import json
-import ssl
 import sys
 import urllib.error
 import urllib.request
@@ -26,7 +25,7 @@ import urllib.request
 from _comun import RAIZ, exigir, leer_env
 
 sys.path.insert(0, str(RAIZ / "backend"))
-from sara.adaptadores.wazuh.tls import abridor  # noqa: E402  (misma verificación TLS que SARA)
+from sara.adaptadores.wazuh.tls import abridor, contexto_tls  # noqa: E402  (misma verificación TLS que SARA)
 
 ROL = "sara_solo_alertas"
 DEFINICION_ROL = {
@@ -49,7 +48,7 @@ def main() -> None:
 
     url = env["WAZUH_INDEXER_URL"].rstrip("/")
     ca = (RAIZ / env["WAZUH_CA_CERT"]).resolve()
-    abrir = abridor(ssl.create_default_context(cafile=str(ca)), env.get("WAZUH_INDEXER_TLS_NOMBRE"))
+    abrir = abridor(contexto_tls(str(ca)), env.get("WAZUH_INDEXER_TLS_NOMBRE"))
     auth = "Basic " + base64.b64encode(f"admin:{env['WAZUH_ADMIN_PASS']}".encode()).decode()
 
     def put(ruta: str, cuerpo: dict) -> None:

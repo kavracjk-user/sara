@@ -16,7 +16,7 @@ def test_sin_nombre_es_urlopen_con_el_contexto():
 
 
 def test_con_nombre_usa_el_manejador():
-    abrir = tls.abridor(ssl.create_default_context(), "wazuh.indexer")
+    abrir = tls.abridor(tls.contexto_tls(), "wazuh.indexer")
     manejadores = [h for h in abrir.__self__.handlers if isinstance(h, tls.ManejadorConNombre)]
     assert len(manejadores) == 1 and manejadores[0].nombre_tls == "wazuh.indexer"
 
@@ -44,3 +44,9 @@ def test_la_conexion_valida_contra_el_nombre_y_no_contra_la_ip(monkeypatch):
     c._context = Ctx()
     c.connect()
     assert llamado["nombre"] == "wazuh.indexer" and c.sock == "socket-tls"
+
+
+def test_contexto_quita_solo_el_perfil_estricto():
+    ctx = tls.contexto_tls()
+    assert not ctx.verify_flags & ssl.VERIFY_X509_STRICT
+    assert ctx.verify_mode == ssl.CERT_REQUIRED and ctx.check_hostname
