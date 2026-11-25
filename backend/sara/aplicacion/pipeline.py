@@ -16,6 +16,9 @@ from sara.dominio.models import (Activo, Caso, Estado, Importancia, Nivel,
 from sara.dominio.priority import Umbrales, sugerir_prioridad
 
 BuscarRelacionadas = Callable[[VistaComun], list[str]]
+# Paso que lee la alerta del índice (lo agrega el flujo antes de P2). Su hora de fin es
+# la hora en que SARA obtuvo los datos de la alerta (RNF-05).
+PASO_LECTURA = "P1_lectura_alerta"
 # El normalizador es de cada fuente (Wazuh, FortiSIEM...): se inyecta, no se importa.
 Normalizador = Callable[[dict[str, Any], Optional[str]], VistaComun]
 DECISIONES = ("escalar", "descartar", "solicitar_mas_informacion")

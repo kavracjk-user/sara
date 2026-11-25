@@ -61,6 +61,10 @@ def test_recorrido_completo_con_alerta_real(api, indexador):
     assert e["pasos"][0]["estado"] == "con_resultado"
     assert id_caso not in e["alertas_relacionadas"]
     assert all(d["procedencia"] for d in e["evidencia"] if d["valor"] != "dato no disponible")
+    fin_p1 = e["pasos"][0]["fin"]                      # RNF-05: hora de lectura en UTC
+    from datetime import datetime, timezone
+    hora = datetime.fromisoformat(fin_p1).astimezone(timezone.utc).isoformat()
+    assert all(d["obtenida_en"] == hora for d in e["evidencia"])
 
     decision = {"decision": "escalar", "justificacion": "Fuerza bruta desde IP externa.",
                 "prioridad_considerada": e["prioridad"]["nivel"], "analista": "analista-01"}

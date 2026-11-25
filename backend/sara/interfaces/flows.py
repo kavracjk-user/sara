@@ -40,13 +40,12 @@ for _clave, _valor in _AJUSTES_PREFECT.items():
 from prefect import flow, task  # noqa: E402  (después de fijar el entorno)
 from prefect.cache_policies import NO_CACHE  # noqa: E402
 
-from sara.aplicacion.pipeline import investigar  # noqa: E402
+from sara.aplicacion.pipeline import PASO_LECTURA, investigar  # noqa: E402
 from sara.aplicacion.steps import ejecutar_paso  # noqa: E402
 from sara.dominio.models import (Activo, Caso, Estado, Importancia, Nivel,  # noqa: E402
                                  PrioridadSugerida, RegistroPaso, VistaComun)
 from sara.puertos import CatalogoActivos, FuenteAlertas, RepositorioCasos  # noqa: E402
 
-PASO_LECTURA = "P1_lectura_alerta"
 PASO_GUARDADO = "P_guardado_caso"
 
 

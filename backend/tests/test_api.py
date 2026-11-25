@@ -151,16 +151,16 @@ def test_investigar_crea_el_caso_y_devuelve_el_expediente(mundo):
     assert e["pasos"][0] == {**e["pasos"][0], "paso": "P1_lectura_alerta",
                              "estado": "con_resultado"}
     ev = {d["dato"]: d for d in e["evidencia"]}
-    assert ev["ip_origen"] == {"dato": "ip_origen", "valor": "203.0.113.10",
-                               "procedencia": "data.srcip"}
+    assert {k: ev["ip_origen"][k] for k in ("dato", "valor", "procedencia")} == {
+        "dato": "ip_origen", "valor": "203.0.113.10", "procedencia": "data.srcip"}
     assert e["prioridad"]["motivos"] and e["decisiones"] == [] and e["t1"] is None
 
 
 def test_evidencia_ausente_dice_dato_no_disponible(mundo):
     e = crear(cliente(mundo), cargar("red_86601_suricata")["_id"])
     ev = {d["dato"]: d for d in e["evidencia"]}
-    assert ev["full_log"] == {"dato": "full_log", "valor": "dato no disponible",
-                              "procedencia": None}
+    assert {k: ev["full_log"][k] for k in ("dato", "valor", "procedencia")} == {
+        "dato": "full_log", "valor": "dato no disponible", "procedencia": None}
 
 
 def test_investigar_dos_veces_409(mundo):
@@ -357,3 +357,15 @@ def test_openapi_al_dia():
 def test_ocultador():
     o = ocultador(["abcd1234", None, "", "xy"])
     assert o("clave abcd1234 y xy") == "clave [oculto] y xy"
+
+
+# ---------- RNF-05: hora de obtención de la evidencia ----------
+def test_cada_evidencia_lleva_la_hora_de_lectura_en_utc(mundo):
+    from datetime import datetime, timezone
+    e = crear(cliente(mundo), cargar("red_86601_suricata")["_id"])
+    fin_p1 = next(p for p in e["pasos"] if p["paso"] == "P1_lectura_alerta")["fin"]
+    esperado = datetime.fromisoformat(fin_p1).astimezone(timezone.utc).isoformat()
+    assert e["evidencia"] and all(d["obtenida_en"] == esperado for d in e["evidencia"])
+    no_disp = [d for d in e["evidencia"] if d["valor"] == "dato no disponible"]
+    assert no_disp and all(d["obtenida_en"] == esperado for d in no_disp)
+    assert esperado.endswith("+00:00")

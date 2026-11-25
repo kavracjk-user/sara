@@ -84,7 +84,8 @@ Expediente completo.
              "agente_nombre": "srv-web", "ip_origen": "...", "ip_destino": null,
              "usuario": "...", "dominio": null, "archivo_ruta": null,
              "archivo_hash": null, "evento": null, "campos_ausentes": []},
-  "evidencia": [{"dato": "ip_origen", "valor": "203.0.113.10", "procedencia": "data.srcip"}],
+  "evidencia": [{"dato": "ip_origen", "valor": "203.0.113.10", "procedencia": "data.srcip",
+                 "obtenida_en": "2026-11-25T17:45:51.006088+00:00"}],
   "indicadores": [{"tipo": "ip", "valor": "203.0.113.10", "origen_campo": "ip_origen"}],
   "pasos": [{"paso": "P1_lectura_alerta", "estado": "con_resultado", "inicio": "...",
              "fin": "...", "reintentos": 0, "fuente": "wazuh_indexer",
@@ -98,7 +99,10 @@ Expediente completo.
 }
 ```
 `evidencia[].valor` es `"dato no disponible"` cuando la alerta no traía ese dato y
-`procedencia` es `null`. `decisiones` va de la más antigua a la más reciente.
+`procedencia` es `null`. `evidencia[].obtenida_en` (RNF-05) es la hora UTC, ISO 8601, en
+que SARA leyó la alerta del índice (fin del paso `P1_lectura_alerta`); la llevan todos
+los datos, también los «no disponibles». Es `null` solo si el caso no pasó por P1 (no
+ocurre con casos creados por el flujo). `decisiones` va de la más antigua a la más reciente.
 
 | Código | Cuándo |
 |---|---|

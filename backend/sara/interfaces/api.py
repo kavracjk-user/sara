@@ -82,7 +82,9 @@ class Alerta(BaseModel):
 class DatoEvidencia(BaseModel):
     dato: str
     valor: object
-    procedencia: Optional[str]
+    procedencia: Optional[str] = Field(description="Campo de la alerta de donde salió")
+    obtenida_en: Optional[str] = Field(
+        description="Hora UTC (ISO 8601) en que SARA leyó la alerta (fin de P1, RNF-05)")
 
 
 class IndicadorSalida(BaseModel):
@@ -285,6 +287,7 @@ def crear_app(cfg: ConfiguracionAPI) -> FastAPI:
         c, v = exp.caso, exp.caso.vista
         ev = dict(v.evidencia_minima or {})
         procedencia = ev.pop("procedencia", {}) or {}
+        obtenida_en = exp.obtenida_en.isoformat() if exp.obtenida_en else None
         return {
             "id": v.id_alerta, "t0": c.t0.isoformat(),
             "t1": c.t1.isoformat() if c.t1 else None,
@@ -297,7 +300,8 @@ def crear_app(cfg: ConfiguracionAPI) -> FastAPI:
                        "archivo_ruta": v.archivo_ruta, "archivo_hash": v.archivo_hash,
                        "evento": v.evento, "campos_ausentes": list(v.campos_ausentes)},
             "evidencia": [{"dato": k, "valor": DATO_NO_DISPONIBLE if val in (None, "") else val,
-                           "procedencia": procedencia.get(k)} for k, val in ev.items()],
+                           "procedencia": procedencia.get(k), "obtenida_en": obtenida_en}
+                          for k, val in ev.items()],
             "indicadores": [{"tipo": i.tipo.value, "valor": i.valor,
                              "origen_campo": i.origen_campo} for i in c.indicadores],
             "pasos": [{"paso": p.paso, "estado": p.estado.value,

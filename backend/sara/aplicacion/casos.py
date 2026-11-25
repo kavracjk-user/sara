@@ -7,10 +7,11 @@ casos (por la investigación) y decisiones del analista. Nada se escribe en Wazu
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Callable, Iterable, Optional
 
-from sara.aplicacion.pipeline import completitud, minutos_hasta_decision, registrar_decision
+from sara.aplicacion.pipeline import (PASO_LECTURA, completitud, minutos_hasta_decision,
+                                      registrar_decision)
 from sara.dominio.models import Caso, Estado, Nivel, TipoAlerta, ahora
 from sara.puertos import DecisionRegistrada, RepositorioExpedientes
 
@@ -52,6 +53,14 @@ class Expediente:
     @property
     def minutos_hasta_decision(self) -> Optional[float]:
         return minutos_hasta_decision(self.caso)
+
+    @property
+    def obtenida_en(self) -> Optional[datetime]:
+        """Hora (UTC) en que SARA obtuvo los datos de la alerta: fin del paso P1. Vale
+        para toda la evidencia, también para los datos «no disponibles» (RNF-05). None
+        solo si el caso no pasó por P1 (no ocurre con casos creados por el flujo)."""
+        lectura = next((p for p in self.caso.pasos if p.paso == PASO_LECTURA), None)
+        return lectura.fin.astimezone(timezone.utc) if lectura else None
 
 
 @dataclass

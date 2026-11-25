@@ -1004,14 +1004,28 @@
                 "type": "null"
               }
             ],
-            "title": "Procedencia"
+            "title": "Procedencia",
+            "description": "Campo de la alerta de donde salió"
+          },
+          "obtenida_en": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Obtenida En",
+            "description": "Hora UTC (ISO 8601) en que SARA leyó la alerta (fin de P1, RNF-05)"
           }
         },
         "type": "object",
         "required": [
           "dato",
           "valor",
-          "procedencia"
+          "procedencia",
+          "obtenida_en"
         ],
         "title": "DatoEvidencia"
       },
