@@ -135,6 +135,11 @@ esta corrida no hubo errores de implementación: ningún caso se modificó ni se
   de `/var/log/lab/` están vacíos y no queda nada en `/tmp/prueba_*.com`. Se compara el
   contenido: la fecha de modificación cambia y los archivos recreados (par 8) tienen
   otro inodo.
+- **Limpiar agentes ya limpios también genera alertas** (2026-11-25): repetir
+  `limpiar todos` con los agentes en la línea base dejó el contenido igual (mismo
+  sha256), pero restaurar los archivos de los pares 5, 7 y 8 cambia su fecha de
+  modificación y Wazuh emitió **550 × 6**. No se modificó el script (registro como
+  limitación): conviene limpiar una sola vez por corrida.
 - **Pausas.** Entre casos se espera 10, 70 o 250 s para que las reglas de frecuencia
   (`ignore` de 5763 y 4151, ventana de 40112) puedan volver a dispararse.
   `--sin-pausa` las omite, con el riesgo de que no salgan.

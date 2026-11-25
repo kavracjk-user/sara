@@ -124,7 +124,8 @@ docker compose --env-file .env -f lab/wazuh/docker-compose.yml down -v   # BORRA
   (`docs/ref/configuration/environment-variables.md`).
 - Rol de solo lectura = permiso `read` sobre `wazuh-alerts*` (guía de RBAC de Wazuh, vía panel).
 
-**Suposiciones y su estado (laboratorio levantado y corrida de los 12 pares, 2026-11-18):**
+**Suposiciones y su estado** (laboratorio levantado y corrida de los 12 pares el
+2026-11-18; re-verificado el 2026-11-25 tras reiniciar el equipo):
 
 Wazuh:
 
@@ -134,7 +135,7 @@ Wazuh:
 | W2 | Ruta de `hash.sh` y carga de `internal_users.yml` al crear el volumen | Confirmada | `admin` con la clave de `.env`: 200; `admin:admin` y `kibanaro:kibanaro`: 401. |
 | W3 | El servidor aplica `API_PASSWORD` a `wazuh-wui` | Confirmada | `registrar_agentes.py` obtuvo el token con esa clave. |
 | W4 | Crear rol y usuario por la API de seguridad en vez del panel | Confirmada | 201 en rol, usuario y asignación (`crear_lector.py`). |
-| W5 | Un rol sin permisos de clúster basta para `_search` | Confirmada | PR-10: `_search` 200 y 403 en toda escritura; 14/14. |
+| W5 | Un rol sin permisos de clúster basta para `_search` | Confirmada | PR-10: `_search` 200 y 403 en toda escritura; 14/14 (2026-11-18 y de nuevo el 2026-11-25, dentro de las 26 de integración). |
 | W6 | Formatos y rutas de los logs, sintaxis de `restrict`, FIM en tiempo real | Confirmada | Corrida real: las líneas de `auth.log`, `red.log` y `eve.json` llegan al índice; 550/554/553 en las rutas del guion; escribir en `/var/log/lab/` no genera alertas de integridad. |
 | W7 | Límites de memoria y `kernelCommandLine` de `.wslconfig` | **Sin probar** | `vm.max_map_count = 262144` y, tras la corrida, ≈ 2,6 GB en total, dentro de los límites. No se probó carga sostenida ni si el valor viene de `kernelCommandLine` o de un `sysctl` manual. |
 
@@ -146,7 +147,7 @@ Agentes con id fijo (`registrar_agentes.py`):
 | A2 | `/agents/insert` acepta el id `099` y la IP `any` | Confirmada | `agent_control -l` lista 099 pc-nuevo, IP `any`. |
 | A3 | La imagen del servidor trae `curl` | Confirmada | `/usr/bin/curl`. |
 | A4 | `wazuh-wui` tiene permiso para crear agentes | Confirmada | Las cinco inserciones respondieron sin error. |
-| A5 | El agente conecta solo con `client.keys`, sin registro automático | Confirmada | 001–004 y 099 `Active`; ninguna línea de registro en `ossec.log`. |
+| A5 | El agente conecta solo con `client.keys`, sin registro automático | Confirmada | 001–004 y 099 `Active`; ninguna línea de registro en `ossec.log`. Siguen `Active` tras reiniciar el equipo (2026-11-25). |
 
 **Problemas encontrados y corregidos al levantar:**
 - El clon oficial salía con CRLF (`autocrlf=true`); ahora se clona con `core.autocrlf=false`.
