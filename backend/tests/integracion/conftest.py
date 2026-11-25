@@ -95,3 +95,35 @@ def indexador(lector):
                           env["WAZUH_INDEXER_PASS"],
                           str((RAIZ_REPO / env["WAZUH_CA_CERT"]).resolve()),
                           nombre_tls=env.get("WAZUH_INDEXER_TLS_NOMBRE"))
+
+
+@pytest.fixture(scope="session")
+def conectar_pg():
+    """Conexión a la base de SARA (docker-compose.yml raíz). Se omite si no responde."""
+    from sara.adaptadores.postgres import conexion
+
+    env = _cargar_env()
+    for v in ("POSTGRES_USER", "POSTGRES_PASSWORD", "POSTGRES_DB", "POSTGRES_HOST",
+              "POSTGRES_PORT"):
+        if os.environ.get(v):
+            env[v] = os.environ[v]
+    try:
+        conexion.conectar(env).close()
+    except Exception as e:  # sin contenedor, sin credenciales...
+        pytest.skip(f"PostgreSQL de SARA no responde: {e}")
+    return _ConectarPG(env)
+
+
+class _ConectarPG:
+    """Llama a conexion.conectar con el entorno, sin mostrar las claves en los
+    informes de pytest (un partial con el dict las imprimía al fallar)."""
+
+    def __init__(self, env: dict[str, str]) -> None:
+        self.__env = env
+
+    def __call__(self):
+        from sara.adaptadores.postgres import conexion
+        return conexion.conectar(self.__env)
+
+    def __repr__(self) -> str:
+        return "<conexión PostgreSQL de SARA (credenciales ocultas)>"

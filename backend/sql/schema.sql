@@ -18,6 +18,17 @@ CREATE TABLE IF NOT EXISTS caso (
     regla_nivel        INTEGER,
     regla_descripcion  TEXT,
     id_agente          TEXT REFERENCES activo(id_agente),  -- NULL = no catalogado
+    -- Resto de la vista común (Tabla 4.14). Agregado en fase 2 para poder releer el
+    -- caso tal como se guardó; NULL = el dato no venía en la alerta.
+    agente_id_alerta   TEXT,                     -- id del agente según la alerta (p. ej. 099)
+    agente_nombre      TEXT,
+    ip_origen          TEXT,
+    ip_destino         TEXT,
+    usuario            TEXT,
+    dominio            TEXT,
+    archivo_ruta       TEXT,
+    archivo_hash       TEXT,
+    evento             TEXT,
     campos_ausentes    TEXT[] NOT NULL DEFAULT '{}',
     evidencia_minima   JSONB NOT NULL,           -- no se pierden campos sin normalizar
     procedimiento      TEXT NOT NULL DEFAULT 'sara'
