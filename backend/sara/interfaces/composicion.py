@@ -11,6 +11,7 @@ WAZUH_INDEXER_URL/USER/PASS, WAZUH_CA_CERT, WAZUH_INDEXER_TLS_NOMBRE, POSTGRES_*
 from __future__ import annotations
 
 import os
+from pathlib import Path
 from typing import Iterable, Mapping, Optional
 
 from fastapi import FastAPI
@@ -35,6 +36,18 @@ def ocultador(secretos: Iterable[Optional[str]]):
     return ocultar
 
 
+RAIZ_REPO = Path(__file__).resolve().parents[3]
+
+
+def ruta_ca(valor: Optional[str]) -> Optional[str]:
+    """Una ruta relativa de la CA se interpreta desde la raíz del repositorio (como en
+    lab/wazuh), no desde la carpeta en que se arrancó la API."""
+    if not valor:
+        return None
+    ruta = Path(valor)
+    return str(ruta if ruta.is_absolute() else (RAIZ_REPO / ruta).resolve())
+
+
 def crear_app_desde_entorno(env: Optional[Mapping[str, str]] = None) -> FastAPI:
     env = os.environ if env is None else env
     from sara.adaptadores.postgres.catalogo import CatalogoPostgres
@@ -49,7 +62,7 @@ def crear_app_desde_entorno(env: Optional[Mapping[str, str]] = None) -> FastAPI:
         return conectar(env)
 
     indexador = IndexadorWazuh(env["WAZUH_INDEXER_URL"], env["WAZUH_INDEXER_USER"],
-                               env["WAZUH_INDEXER_PASS"], env.get("WAZUH_CA_CERT"),
+                               env["WAZUH_INDEXER_PASS"], ruta_ca(env.get("WAZUH_CA_CERT")),
                                nombre_tls=env.get("WAZUH_INDEXER_TLS_NOMBRE"))
     repositorio = RepositorioPostgres(conectar_pg)
     flows.configurar_dependencias(flows.Dependencias(

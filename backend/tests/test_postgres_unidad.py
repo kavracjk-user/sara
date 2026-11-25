@@ -48,3 +48,12 @@ def test_no_guarda_un_caso_sin_id_de_alerta():
 def test_procedimiento_solo_sara_o_manual():
     with pytest.raises(ValueError):
         RepositorioPostgres(lambda: None, procedimiento="otro")
+
+
+def test_los_metodos_del_puerto_no_quedan_tapados_por_atributos():
+    # Fallo real de la fase 4: el atributo `procedimiento` tapaba el método del puerto.
+    repo = RepositorioPostgres(lambda: None)
+    for metodo in ("guardar", "obtener", "listar", "decisiones", "registrar_decision",
+                   "procedimiento"):
+        assert callable(getattr(repo, metodo)), metodo
+    assert repo.procedimiento_por_defecto == "sara"

@@ -40,7 +40,7 @@ class RepositorioPostgres:
         if procedimiento not in ("sara", "manual"):
             raise ValueError("procedimiento debe ser 'sara' o 'manual'.")
         self._conectar = conectar
-        self.procedimiento = procedimiento
+        self.procedimiento_por_defecto = procedimiento
 
     # ---------- escritura ----------
     def guardar(self, caso: Caso) -> None:
@@ -77,7 +77,7 @@ class RepositorioPostgres:
                  v.regla_descripcion, v.agente_id if catalogado else None, v.agente_id,
                  v.agente_nombre, v.ip_origen, v.ip_destino, v.usuario, v.dominio,
                  v.archivo_ruta, v.archivo_hash, v.evento, list(v.campos_ausentes),
-                 Jsonb(a_json(v.evidencia_minima)), self.procedimiento, caso.t0, caso.t1),
+                 Jsonb(a_json(v.evidencia_minima)), self.procedimiento_por_defecto, caso.t0, caso.t1),
             ).fetchone()[0]
 
             for tabla in ("indicador", "ejecucion_paso", "prioridad_sugerida"):

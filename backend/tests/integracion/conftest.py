@@ -127,3 +127,28 @@ class _ConectarPG:
 
     def __repr__(self) -> str:
         return "<conexión PostgreSQL de SARA (credenciales ocultas)>"
+
+
+class EntornoOculto(dict):
+    """Entorno del laboratorio para crear la API real. Su repr no muestra valores, así
+    que una prueba que falle no puede imprimir credenciales."""
+
+    def __repr__(self) -> str:
+        return f"<entorno del laboratorio: {len(self)} variables (valores ocultos)>"
+
+    __str__ = __repr__
+
+
+@pytest.fixture
+def entorno_lab(lector, conectar_pg):
+    """Variables de .env más una clave de API SOLO para estas pruebas (no se escribe en
+    .env). Requiere Wazuh y PostgreSQL disponibles (si no, se omite)."""
+    import secrets
+
+    env = EntornoOculto(_cargar_env())
+    for v in ("POSTGRES_USER", "POSTGRES_PASSWORD", "POSTGRES_DB", "POSTGRES_HOST",
+              "POSTGRES_PORT"):
+        if os.environ.get(v):
+            env[v] = os.environ[v]
+    env["API_KEY_SARA"] = "prueba-" + secrets.token_urlsafe(24)
+    return env
