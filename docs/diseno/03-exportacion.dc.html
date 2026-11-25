@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>SARA – Exportación</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'IBM Plex Sans',system-ui,sans-serif;background:#F2ECDF}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit}
+button:focus-visible,input:focus-visible{outline:2px solid #B3261E;outline-offset:2px}
+</style>
+</helmet>
+<div style="min-height: 980px; box-sizing: border-box; background: #F2ECDF; color: #1C1A17; display: flex; flex-direction: column">
+  <header style="border-bottom: 2px solid #1C1A17; padding: 16px 40px; display: flex; flex-wrap: wrap; gap: 12px 32px; align-items: baseline">
+    <div style="display: flex; align-items: baseline; gap: 14px">
+      <span style="font-family: 'Fraunces', serif; font-size: 30px; font-weight: 700; letter-spacing: 0.04em">SARA</span>
+      <span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; letter-spacing: 0.08em; color: #5E574B; text-transform: uppercase">Expedientes de investigación inicial</span>
+    </div>
+    <nav style="display: flex; gap: 24px; flex: 1; font-size: 15px">
+      <a href="Main.dc.html" style="color: #5E574B">Casos</a>
+      <a href="Exportacion.dc.html" style="font-weight: 600; border-bottom: 3px solid #B3261E; padding-bottom: 2px">Exportación</a>
+    </nav>
+    <span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #5E574B">● Wazuh: solo lectura &nbsp;·&nbsp; Analista: [nombre]</span>
+  </header>
+  <div style="padding: 8px 40px; font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #5E574B; border-bottom: 1px dashed #B9AE96">Boceto con datos ilustrativos. Esta vista previa no contiene resultados de la evaluación.</div>
+  <main style="padding: 36px 40px 56px; max-width: 1200px; width: 100%; box-sizing: border-box; margin: 0 auto; display: flex; flex-direction: column; gap: 28px">
+    <div>
+      <div style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; letter-spacing: 0.1em; color: #5E574B; text-transform: uppercase">Evaluación comparativa</div>
+      <h1 style="margin: 8px 0 12px; font-family: 'Fraunces', serif; font-size: 44px; line-height: 1.05; font-weight: 700">Exportar los casos</h1>
+      <p style="margin: 0; font-family: 'Fraunces', serif; font-size: 20px; line-height: 1.4; max-width: 760px">Cada fila toma como <strong>t1</strong> la hora de la primera decisión del analista. Los casos sin decisión salen con t1 vacío.</p>
+    </div>
+    <div style="background: #FBF8F1; border: 1px solid #B9AE96; box-shadow: 0 14px 28px rgba(28, 26, 23, 0.08); padding: 28px 32px; display: flex; flex-direction: column; gap: 26px">
+      <div style="display: flex; flex-wrap: wrap; gap: 20px 32px; align-items: flex-end; justify-content: space-between">
+        <fieldset style="border: 0; margin: 0; padding: 0; display: flex; gap: 20px; align-items: center; flex-wrap: wrap">
+          <legend style="padding: 0; margin-bottom: 8px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: #5E574B">Formato del archivo</legend>
+          <sc-for list="{{formatos}}" as="f" hint-placeholder-count="2">
+            <label style="display: flex; align-items: center; gap: 10px; min-height: 44px; font-size: 16px; cursor: pointer">
+              <input type="radio" name="formato" checked="{{f.marcado}}" onChange="{{f.elegir}}" style="width: 20px; height: 20px; accent-color: #B3261E">
+              <span>{{f.nombre}}</span>
+            </label>
+          </sc-for>
+        </fieldset>
+        <button type="button" style="min-height: 48px; padding: 0 28px; border: 0; background: #1C1A17; color: #FBF8F1; font-size: 15px; font-weight: 600; letter-spacing: 0.04em; cursor: pointer">Descargar archivo {{formato}}</button>
+      </div>
+      <div style="overflow-x: auto">
+        <div style="min-width: 900px">
+          <div style="display: grid; grid-template-columns: 90px 160px 110px 110px 100px 1.2fr 1.4fr 110px; gap: 14px; padding: 8px 0; border-bottom: 2px solid #1C1A17; font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: #5E574B">
+            <span>Caso</span><span>Tipo</span><span>t0 (UTC)</span><span>t1 (UTC)</span><span>Minutos</span><span>Prioridad sugerida</span><span>Primera decisión</span><span>Completitud</span>
+          </div>
+          <sc-for list="{{filas}}" as="r" hint-placeholder-count="6">
+            <div style="display: grid; grid-template-columns: 90px 160px 110px 110px 100px 1.2fr 1.4fr 110px; gap: 14px; padding: 12px 0; border-bottom: 1px solid #CFC6B2; font-size: 14px">
+              <span style="font-family: 'IBM Plex Mono', monospace; font-weight: 500; color: #B3261E">{{r.id}}</span>
+              <span>{{r.tipo}}</span>
+              <span style="font-family: 'IBM Plex Mono', monospace; font-size: 13px">{{r.t0}}</span>
+              <span style="font-family: 'IBM Plex Mono', monospace; font-size: 13px">{{r.t1}}</span>
+              <span style="font-family: 'IBM Plex Mono', monospace; font-size: 13px">{{r.min}}</span>
+              <span>{{r.prio}}</span><span>{{r.dec}}</span>
+              <span style="font-family: 'IBM Plex Mono', monospace; font-size: 13px">{{r.comp}}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      <div>
+        <div style="margin-bottom: 8px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: #5E574B">Vista previa del archivo ({{formato}})</div>
+        <pre style="margin: 0; padding: 16px 20px; background: #F2ECDF; border: 1px solid #CFC6B2; font-family: 'IBM Plex Mono', monospace; font-size: 13px; line-height: 1.6; color: #1C1A17; overflow-x: auto; white-space: pre-wrap">{{vista}}</pre>
+      </div>
+      <p style="margin: 0; font-size: 13px; color: #5E574B">La exportación solo lee los casos guardados. No modifica nada en Wazuh.</p>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":980}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const formato = this.state.formato || 'CSV';
+    const filas = [
+      { id: 'C-0007', tipo: 'Autenticación', t0: '05:07:12', t1: '05:09:40', min: '2,5', prio: 'Alta', dec: 'Escalar', comp: '100 %' },
+      { id: 'C-0006', tipo: 'Autenticación', t0: '05:08:03', t1: '', min: '', prio: 'Media', dec: 'Pendiente', comp: '100 %' },
+      { id: 'C-0005', tipo: 'Cambio de archivos', t0: '05:09:21', t1: '', min: '', prio: 'Media', dec: 'Pendiente', comp: '80 %' },
+      { id: 'C-0004', tipo: 'Actividad de red', t0: '05:10:44', t1: '05:12:02', min: '1,3', prio: 'Media', dec: 'Solicitar más información', comp: '100 %' },
+      { id: 'C-0003', tipo: 'Autenticación', t0: '05:11:30', t1: '05:11:58', min: '0,5', prio: 'Baja', dec: 'Descartar', comp: '100 %' },
+      { id: 'C-0002', tipo: 'Actividad de red', t0: '05:12:15', t1: '', min: '', prio: 'Información insuficiente', dec: 'Pendiente', comp: '60 %' }
+    ];
+    const csv = 'id,tipo_alerta,procedimiento,t0,t1,minutos_hasta_decision,prioridad_sugerida,decision,prioridad_considerada,completitud\nC-0007,autenticacion,sara,05:07:12,05:09:40,2.5,Alta,escalar,Alta,100\nC-0006,autenticacion,sara,05:08:03,,,Media,,,100\n…';
+    const json = '{ "casos": [\n  { "id": "C-0007", "tipo_alerta": "autenticacion", "procedimiento": "sara",\n    "t0": "05:07:12", "t1": "05:09:40", "minutos_hasta_decision": 2.5,\n    "prioridad_sugerida": "Alta", "decision": "escalar",\n    "prioridad_considerada": "Alta", "completitud": 100 },\n  …\n] }';
+    return {
+      formato: formato,
+      vista: formato === 'CSV' ? csv : json,
+      formatos: ['CSV', 'JSON'].map((n) => ({
+        nombre: n,
+        marcado: formato === n,
+        elegir: () => this.setState({ formato: n })
+      })),
+      filas: filas.map((r) => ({ ...r, t1: r.t1 || '—', min: r.min || '—' }))
+    };
+  }
+}
+</script>
+</body>
+</html>

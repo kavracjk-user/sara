@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>SARA – Registro de casos</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'IBM Plex Sans',system-ui,sans-serif;background:#F2ECDF}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit}
+.fila:hover{background:#F4EEDF}
+.fila:focus-visible,button:focus-visible{outline:2px solid #B3261E;outline-offset:2px}
+</style>
+</helmet>
+<div style="min-height: 1040px; box-sizing: border-box; background: #F2ECDF; color: #1C1A17; display: flex; flex-direction: column">
+  <header style="border-bottom: 2px solid #1C1A17; padding: 16px 40px; display: flex; flex-wrap: wrap; gap: 12px 32px; align-items: baseline">
+    <div style="display: flex; align-items: baseline; gap: 14px">
+      <span style="font-family: 'Fraunces', serif; font-size: 30px; font-weight: 700; letter-spacing: 0.04em">SARA</span>
+      <span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; letter-spacing: 0.08em; color: #5E574B; text-transform: uppercase">Expedientes de investigación inicial</span>
+    </div>
+    <nav style="display: flex; gap: 24px; flex: 1; font-size: 15px">
+      <a href="Main.dc.html" style="font-weight: 600; border-bottom: 3px solid #B3261E; padding-bottom: 2px">Casos</a>
+      <a href="Exportacion.dc.html" style="color: #5E574B">Exportación</a>
+    </nav>
+    <span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #5E574B">● Wazuh: solo lectura &nbsp;·&nbsp; Analista: [nombre]</span>
+  </header>
+  <div style="padding: 8px 40px; font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #5E574B; border-bottom: 1px dashed #B9AE96">Boceto con datos ilustrativos. Los casos y las prioridades no son resultados de la evaluación.</div>
+  <main style="padding: 36px 40px 56px; max-width: 1200px; width: 100%; box-sizing: border-box; margin: 0 auto; display: flex; flex-direction: column; gap: 28px">
+    <div>
+      <div style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; letter-spacing: 0.1em; color: #5E574B; text-transform: uppercase">Archivo de casos</div>
+      <h1 style="margin: 8px 0 12px; font-family: 'Fraunces', serif; font-size: 44px; line-height: 1.05; font-weight: 700">Casos investigados</h1>
+      <p style="margin: 0; font-family: 'Fraunces', serif; font-size: 21px; line-height: 1.4; max-width: 760px"><span style="color: #B3261E; font-weight: 700">{{total}} casos</span> en el archivo: <strong>{{pendientes}}</strong> esperan la decisión del analista y <strong>{{decididos}}</strong> ya tienen dictamen.</p>
+    </div>
+    <div>
+      <div style="display: flex; flex-wrap: wrap; gap: 4px; align-items: flex-end; padding-left: 8px">
+        <sc-for list="{{pestanas}}" as="t" hint-placeholder-count="5">
+          <button type="button" onClick="{{t.elegir}}" aria-pressed="{{t.pulsado}}" style="{{t.style}}">{{t.nombre}} · {{t.cuenta}}</button>
+        </sc-for>
+      </div>
+      <div style="background: #FBF8F1; border: 1px solid #B9AE96; box-shadow: 0 14px 28px rgba(28, 26, 23, 0.08); overflow-x: auto">
+        <div style="min-width: 960px">
+          <div style="display: grid; grid-template-columns: 92px minmax(0, 1fr) 150px 190px 190px; gap: 20px; padding: 12px 28px; border-bottom: 2px solid #1C1A17; font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: #5E574B">
+            <span>Caso</span><span>Tipo de alerta</span><span>Activo</span><span>Prioridad sugerida</span><span>Estado de revisión</span>
+          </div>
+          <sc-for list="{{filas}}" as="fila" hint-placeholder-count="6">
+            <a class="fila" href="ExpedienteForense.dc.html" style="display: grid; grid-template-columns: 92px minmax(0, 1fr) 150px 190px 190px; gap: 20px; padding: 18px 28px; align-items: center; border-bottom: 1px solid #CFC6B2">
+              <span style="font-family: 'IBM Plex Mono', monospace; font-weight: 500; color: #B3261E">{{fila.id}}</span>
+              <span><span style="font-family: 'Fraunces', serif; font-size: 19px; font-weight: 600; line-height: 1.2">{{fila.desc}}</span><br><span style="font-size: 13px; color: #5E574B">{{fila.tipo}} · regla {{fila.regla}} · nivel {{fila.nivel}}</span></span>
+              <span style="font-size: 15px">{{fila.activo}}<br><span style="font-size: 12px; color: #5E574B">Importancia {{fila.imp}}</span></span>
+              <span><span style="{{fila.sello}}">{{fila.prio}}</span></span>
+              <span style="{{fila.estadoStyle}}">{{fila.estado}}</span>
+            </a>
+          </sc-for>
+          <sc-if value="{{sinFilas}}" hint-placeholder-val="{{ false }}">
+            <div style="padding: 36px 28px; font-family: 'Fraunces', serif; font-size: 18px; color: #5E574B">No hay casos con esta prioridad.</div>
+          </sc-if>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":1040}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const casos = [
+      { id: 'C-0007', desc: 'Varios fallos de acceso y luego un acceso correcto', tipo: 'Autenticación', regla: '40112', nivel: 12, activo: 'srv-web', imp: 'Alta', prio: 'Alta', dec: 'Escalar' },
+      { id: 'C-0006', desc: 'Intentos repetidos de acceso por SSH', tipo: 'Autenticación', regla: '5763', nivel: 10, activo: 'srv-bd', imp: 'Alta', prio: 'Media', dec: '' },
+      { id: 'C-0005', desc: 'Cambio en un archivo vigilado', tipo: 'Cambio de archivos', regla: '550', nivel: 7, activo: 'srv-bd', imp: 'Alta', prio: 'Media', dec: '' },
+      { id: 'C-0004', desc: 'Consulta de red con firma conocida', tipo: 'Actividad de red', regla: '86601', nivel: 7, activo: 'pc-analista', imp: 'Media', prio: 'Media', dec: 'Solicitar más información' },
+      { id: 'C-0003', desc: 'Fallo de acceso aislado por SSH', tipo: 'Autenticación', regla: '5760', nivel: 5, activo: 'pc-lab-01', imp: 'Baja', prio: 'Baja', dec: 'Descartar' },
+      { id: 'C-0002', desc: 'Alerta de red de un equipo sin catalogar', tipo: 'Actividad de red', regla: '86601', nivel: 7, activo: 'pc-nuevo', imp: 'No catalogado', prio: 'Información insuficiente', dec: '' }
+    ];
+    const baseSello = "display:inline-block;padding:4px 12px;font-family:'Fraunces',serif;font-weight:700;font-size:15px;letter-spacing:0.08em;text-transform:uppercase;";
+    const sellos = {
+      'Alta': 'border:3px solid #B3261E;outline:1px solid #B3261E;outline-offset:2px;color:#B3261E;transform:rotate(-3deg)',
+      'Media': 'border:2px solid #1C1A17;color:#1C1A17',
+      'Baja': 'border:1px solid #5E574B;color:#5E574B;font-weight:600',
+      'Información insuficiente': 'border:2px dashed #5E574B;color:#5E574B;font-size:13px;letter-spacing:0.04em'
+    };
+    const filtro = this.state.filtro || 'Todas';
+    const visibles = casos.filter((c) => filtro === 'Todas' || c.prio === filtro);
+    const nombres = ['Todas', 'Alta', 'Media', 'Baja', 'Información insuficiente'];
+    const tab = 'cursor:pointer;min-height:44px;padding:0 18px;border:1px solid #B9AE96;border-bottom:0;border-radius:10px 10px 0 0;font-family:"IBM Plex Mono",monospace;font-size:12px;letter-spacing:0.06em;text-transform:uppercase;';
+    return {
+      total: casos.length,
+      pendientes: casos.filter((c) => !c.dec).length,
+      decididos: casos.filter((c) => c.dec).length,
+      sinFilas: visibles.length === 0,
+      pestanas: nombres.map((n) => ({
+        nombre: n,
+        cuenta: n === 'Todas' ? casos.length : casos.filter((c) => c.prio === n).length,
+        pulsado: filtro === n ? 'true' : 'false',
+        elegir: () => this.setState({ filtro: n }),
+        style: tab + (filtro === n ? 'background:#FBF8F1;color:#1C1A17;font-weight:500;padding-bottom:2px;margin-bottom:-1px;position:relative' : 'background:#E4D9BC;color:#5E574B')
+      })),
+      filas: visibles.map((c) => ({
+        ...c,
+        sello: baseSello + sellos[c.prio],
+        estado: c.dec ? '✓ Decidido: ' + c.dec : 'Pendiente de decisión',
+        estadoStyle: 'font-size:14px;' + (c.dec ? 'font-weight:600' : 'color:#5E574B;font-style:italic')
+      }))
+    };
+  }
+}
+</script>
+</body>
+</html>
