@@ -17,8 +17,8 @@ de alertas en un laboratorio SOC. **No ejecuta bloqueos, aislamiento ni contenci
 | Lectura de Wazuh (P1) | `sara/adaptadores/wazuh/indexador.py` | Probado contra el indexador del laboratorio con el usuario de solo consulta (PR-10 y relacionadas) |
 | Persistencia (catálogo y casos) | `sara/adaptadores/postgres/` | Probado contra PostgreSQL 16 del Compose raíz: recorrido alerta real → investigar → guardar → releer → `v_exportacion` |
 | Flujo Prefect (fase 3) | `sara/interfaces/flows.py` | Probado con Prefect 3.9.5 en proceso (servidor temporal local) contra Wazuh y PostgreSQL reales: P1 leer → P2–P5 → guardar → releer |
-| Interfaz FastAPI | `sara/interfaces/api.py` | **Sin probar**; almacén en memoria provisional |
-| Esquema PostgreSQL | `sql/schema.sql` + `sql/seed_catalogo_anexo_c.sql` (Compose los carga al crear el volumen) | Probado: se aplica al crear el volumen del contenedor. Fase 2 agregó a `caso` el resto de la vista común (IP, usuario, dominio, archivo, id del agente según la alerta) |
+| API del analista (fase 4) | `sara/interfaces/api.py`, `sara/aplicacion/casos.py`, `sara/interfaces/composicion.py` | Probada: 36 pruebas sin servicios y 5 contra Wazuh y PostgreSQL reales; también desde su contenedor. Contrato: `docs/api.md` y `docs/api/openapi.json` |
+| Esquema PostgreSQL | `sql/schema.sql` + `sql/seed_catalogo_anexo_c.sql` (Compose los carga al crear el volumen); `sql/migraciones/` para bases existentes | Probado: se aplica al crear el volumen del contenedor. Fase 2 agregó a `caso` el resto de la vista común (IP, usuario, dominio, archivo, id del agente según la alerta) |
 
 ## Pruebas
 
@@ -64,12 +64,50 @@ omitida no es una prueba aprobada.
   `WAZUH_CA_CERT` y `POSTGRES_*` deben estar en el entorno del proceso (el flujo no lee
   `.env` por sí mismo).
 
+## API (fase 4)
+
+Contrato: `docs/api.md`. OpenAPI: `docs/api/openapi.json` (regenerar con
+`.venv/Scripts/python scripts/exportar_openapi.py`; una prueba falla si queda viejo).
+
+```
+# Local (desde backend/, con las variables de entorno cargadas en el proceso):
+.venv/Scripts/python -m sara.interfaces.composicion          # 127.0.0.1:8000
+# Contenedor (desde la raíz; necesita API_KEY_SARA propia en .env):
+docker compose --profile api up -d --build api
+```
+
+- Lo único que escribe: casos (por el flujo) y decisiones. Wazuh: solo lectura; sin
+  rutas de contención. Solo dos rutas POST: `/investigaciones` y `/casos/{id}/decision`.
+- Clave `X-API-Key` en todas las rutas (incluida `/salud`); sin `API_KEY_SARA`, 503.
+  CORS de un solo origen (`SARA_CORS_ORIGEN`, por defecto `http://localhost:5173`).
+- Errores en español con un único esquema; sin trazas ni credenciales (los textos de
+  error de los pasos pasan por un filtro de secretos conocidos).
+- `api.py` no importa adaptadores; todo se arma en `composicion.py` (único punto).
+- El id del caso es el `_id` del índice (`^[A-Za-z0-9_-]{1,64}$`).
+- Decisión con analista (columna nueva `analista`, migración
+  `sql/migraciones/001_analista_en_decision.sql`, ya aplicada a la base del
+  laboratorio). En el piloto, seudónimos (`analista-01`), no nombres reales (RNF-03).
+- Contenedor: usuario uid 1000 sin privilegios; Wazuh por `host.docker.internal`
+  validando el certificado contra `wazuh.indexer`; publicado solo en 127.0.0.1.
+
 ## Lo que NO está probado
 
 - Prefect con servidor propio, despliegues, programación periódica ni la interfaz web
   de Prefect (se dejan para cuando se decida cómo se ejecuta SARA en el piloto).
 - El flujo con varias alertas a la vez o en paralelo.
-- La API FastAPI (`sara/interfaces/api.py`): sigue con almacén en memoria y sin probar.
+- La API con varios usuarios o peticiones simultáneas; dos decisiones a la vez sobre el
+  mismo caso (t1 está protegido por un bloqueo de fila, pero el 409 por decisión
+  repetida se comprueba fuera de la transacción).
+- Listado y exportación con muchos casos: se cargan todos y se filtran en memoria.
+- `POST /investigaciones` tarda lo que el flujo (≈ 20 s la primera vez por el servidor
+  temporal de Prefect); no hay cola ni tiempo máximo HTTP propio.
+- HTTPS en la propia API (escucha HTTP en 127.0.0.1); rotación de `API_KEY_SARA`.
+- El contrato frente a RF-09 a RF-14 y la Tabla 4.18 del perfil (no accesible desde el
+  repositorio).
+- `uid 1000` en la imagen depende de con qué usuario generó los certificados
+  `wazuh-certs-tool` en esta máquina.
+- Aviso de Starlette: «Using httpx with starlette.testclient is deprecated; install
+  httpx2». No afecta a las pruebas; no se cambió.
 - Al cerrar el proceso de pruebas, Prefect imprime «Logging error … I/O operation on
   closed file»: su registro escribe después de que pytest cerró la salida. No afecta a
   los resultados; no se corrigió.
