@@ -19,7 +19,8 @@ import urllib.request
 from typing import Any, Optional
 
 from sara.adaptadores.wazuh.normalizer import MAPA_CAMPOS
-from sara.puertos import MAX_RELACIONADAS, AlertasRelacionadas, ResumenAlerta
+from sara.puertos import (MAX_RELACIONADAS, AlertaNueva, AlertasRelacionadas,
+                          MarcaIngesta, ResumenAlerta)
 from sara.adaptadores.wazuh.tls import abridor, contexto_tls
 from sara.dominio.models import VistaComun
 
@@ -115,6 +116,24 @@ class IndexadorWazuh:
         total = res.get("hits", {}).get("total", {})
         total = total.get("value", len(golpes)) if isinstance(total, dict) else int(total or 0)
         return AlertasRelacionadas(total, tuple(_resumen(h) for h in golpes))
+
+    def alertas_despues_de(self, marca: Optional[MarcaIngesta],
+                           lote: int) -> list[AlertaNueva]:
+        """Ingesta: alertas posteriores a la marca, en orden ascendente de marca de
+        tiempo. El `id` de Wazuh desempata alertas con la misma marca de tiempo
+        (search_after), así ninguna se salta ni se repite entre lotes. Solo lectura."""
+        cuerpo: dict[str, Any] = {
+            "size": lote, "sort": [{"timestamp": "asc"}, {"id": "asc"}],
+            "_source": ["timestamp", "rule.id"], "query": {"match_all": {}}}
+        if marca is not None:
+            cuerpo["search_after"] = list(marca.orden)
+        salida = []
+        for h in self._buscar(cuerpo).get("hits", {}).get("hits", []):
+            fuente = h.get("_source", {}) or {}
+            regla = (fuente.get("rule", {}) or {}).get("id")
+            salida.append(AlertaNueva(h["_id"], None if regla is None else str(regla),
+                                      fuente.get("timestamp"), tuple(h.get("sort", ()))))
+        return salida
 
 
 def _resumen(golpe: dict[str, Any]) -> ResumenAlerta:

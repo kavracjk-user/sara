@@ -48,38 +48,52 @@ def ruta_ca(valor: Optional[str]) -> Optional[str]:
     return str(ruta if ruta.is_absolute() else (RAIZ_REPO / ruta).resolve())
 
 
-def crear_app_desde_entorno(env: Optional[Mapping[str, str]] = None) -> FastAPI:
+def dependencias_desde_entorno(env: Optional[Mapping[str, str]] = None):
+    """Arma los adaptadores reales y los entrega al flujo. Devuelve (dependencias,
+    función que comprueba la base). Único lugar donde se crean adaptadores."""
     env = os.environ if env is None else env
     from sara.adaptadores.postgres.catalogo import CatalogoPostgres
     from sara.adaptadores.postgres.conexion import conectar
+    from sara.adaptadores.postgres.marcas import MarcasPostgres
     from sara.adaptadores.postgres.repositorio import RepositorioPostgres
     from sara.adaptadores.wazuh.indexador import IndexadorWazuh
-    from sara.adaptadores.wazuh.normalizer import OBLIGATORIOS, normalizar
-    from sara.aplicacion.casos import ServicioCasos
+    from sara.adaptadores.wazuh.normalizer import normalizar
     from sara.interfaces import flows
 
     def conectar_pg():
         return conectar(env)
 
-    indexador = IndexadorWazuh(env["WAZUH_INDEXER_URL"], env["WAZUH_INDEXER_USER"],
-                               env["WAZUH_INDEXER_PASS"], ruta_ca(env.get("WAZUH_CA_CERT")),
-                               nombre_tls=env.get("WAZUH_INDEXER_TLS_NOMBRE"))
-    repositorio = RepositorioPostgres(conectar_pg)
-    flows.configurar_dependencias(flows.Dependencias(
-        indexador, CatalogoPostgres(conectar_pg), repositorio, normalizar))
-
     def base_disponible() -> bool:
         with conectar_pg() as con:
             return con.execute("SELECT 1").fetchone() == (1,)
 
-    servicio = ServicioCasos(repositorio, flows.investigacion_inicial,
+    indexador = IndexadorWazuh(env["WAZUH_INDEXER_URL"], env["WAZUH_INDEXER_USER"],
+                               env["WAZUH_INDEXER_PASS"], ruta_ca(env.get("WAZUH_CA_CERT")),
+                               nombre_tls=env.get("WAZUH_INDEXER_TLS_NOMBRE"))
+    deps = flows.Dependencias(
+        indexador, CatalogoPostgres(conectar_pg), RepositorioPostgres(conectar_pg), normalizar,
+        marcas=MarcasPostgres(conectar_pg),
+        ocultar=ocultador(env.get(v) for v in VARIABLES_SECRETAS))
+    flows.configurar_dependencias(deps)
+    return deps, base_disponible
+
+
+def crear_app_desde_entorno(env: Optional[Mapping[str, str]] = None) -> FastAPI:
+    env = os.environ if env is None else env
+    from sara.adaptadores.wazuh.normalizer import OBLIGATORIOS
+    from sara.aplicacion.casos import ServicioCasos
+    from sara.interfaces import flows
+
+    deps, base_disponible = dependencias_desde_entorno(env)
+    servicio = ServicioCasos(deps.repositorio, flows.investigacion_inicial,  # type: ignore[arg-type]
                              lambda tipo: OBLIGATORIOS[tipo])
     return crear_app(ConfiguracionAPI(
         servicio=servicio,
         clave_api=env.get("API_KEY_SARA") or None,
-        salud={"indexador": indexador.disponible, "base_de_datos": base_disponible},
+        salud={"indexador": deps.fuente.disponible,  # type: ignore[attr-defined]
+               "base_de_datos": base_disponible},
         origen_cors=env.get("SARA_CORS_ORIGEN", ORIGEN_CORS_POR_DEFECTO),
-        ocultar=ocultador(env.get(v) for v in VARIABLES_SECRETAS),
+        ocultar=deps.ocultar,
     ))
 
 

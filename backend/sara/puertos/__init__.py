@@ -110,3 +110,35 @@ class RepositorioExpedientes(RepositorioCasos, Protocol):
     def relacionadas_de(self, id_alerta: str) -> AlertasRelacionadas:
         """Las alertas relacionadas tal como se guardaron al investigar."""
         ...
+
+
+# ---------- ingesta (fase 4b) ----------
+@dataclass(frozen=True)
+class MarcaIngesta:
+    """Hasta dónde se leyó el índice: los valores de orden de la última alerta procesada
+    (marca de tiempo y desempate) y su marca de tiempo legible."""
+
+    orden: tuple
+    marca_tiempo: Optional[str] = None
+
+
+@dataclass(frozen=True)
+class AlertaNueva:
+    id: str                                   # _id del índice
+    regla_id: Optional[str]
+    marca_tiempo: Optional[str]
+    orden: tuple                              # para continuar después de esta alerta
+
+
+class FuenteIngesta(Protocol):
+    """Lectura (solo consulta) de las alertas posteriores a una marca, en orden
+    ascendente de marca de tiempo."""
+
+    def alertas_despues_de(self, marca: Optional[MarcaIngesta],
+                           lote: int) -> list[AlertaNueva]: ...
+
+
+class RepositorioMarcas(Protocol):
+    def leer_marca(self, nombre: str) -> Optional[MarcaIngesta]: ...
+    def guardar_marca(self, nombre: str, marca: MarcaIngesta) -> None: ...
+

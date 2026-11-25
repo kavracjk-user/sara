@@ -109,6 +109,14 @@ CREATE TABLE IF NOT EXISTS decision_humana (
     registrada_en         TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- Marca de avance de la ingesta de alertas nuevas (fase 4b).
+CREATE TABLE IF NOT EXISTS ingesta_marca (
+    nombre          TEXT PRIMARY KEY,            -- p. ej. 'wazuh-alertas'
+    orden           JSONB NOT NULL,              -- valores de orden de la última alerta
+    marca_tiempo    TIMESTAMPTZ,                 -- su marca de tiempo (legible)
+    actualizada_en  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
 CREATE INDEX IF NOT EXISTS ix_paso_caso ON ejecucion_paso(id_caso);
 CREATE INDEX IF NOT EXISTS ix_decision_caso ON decision_humana(id_caso);
 

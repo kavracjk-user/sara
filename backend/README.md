@@ -90,6 +90,28 @@ docker compose --profile api up -d --build api
 - Contenedor: usuario uid 1000 sin privilegios; Wazuh por `host.docker.internal`
   validando el certificado contra `wazuh.indexer`; publicado solo en 127.0.0.1.
 
+## Ingesta de alertas nuevas (fase 4b)
+
+```
+.venv/Scripts/python -m sara.interfaces.ingesta --una-vez     # desde backend/
+```
+
+- Lee el índice con el usuario de solo consulta, en orden ascendente de marca de tiempo
+  (desempate por el `id` de Wazuh, con `search_after`), desde la marca guardada en
+  `ingesta_marca`. Máximo `SARA_INGESTA_LOTE` alertas (100 por defecto).
+- Solo las reglas de `SARA_REGLAS_INGESTA` (por defecto `REGLAS_CATALOGADAS`: las 8
+  reglas que dispararon en la corrida real). Las demás se omiten y se cuentan.
+- Idempotente: una alerta con caso se omite. Un fallo se registra (sin credenciales) y
+  el lote sigue; la marca se queda antes del primer fallo para reintentarlo.
+- Imprime un resumen JSON: leídas, creadas, omitidas por regla (con detalle), ya
+  existentes, con error. Código de salida 1 si hubo errores.
+- **t0 hoy:** es el momento en que SARA **investiga** la alerta (lo fija el pipeline al
+  crear el caso), no la marca de tiempo de la alerta. Con la ingesta, t0 = momento de la
+  ingesta; con `POST /investigaciones`, momento de la petición. **[PENDIENTE — autor y
+  tutor]:** decidir si t0 debe ser la hora en que la alerta queda disponible para el
+  analista (y cuál es esa hora). No se cambió el comportamiento.
+- No se ejecutó contra la base real fuera de las pruebas.
+
 ## Lo que NO está probado
 
 - Prefect con servidor propio, despliegues, programación periódica ni la interfaz web

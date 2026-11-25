@@ -97,6 +97,16 @@ REGLAS_CATALOGADAS: dict[str, TipoAlerta] = {
     # Se clasifica por rule.id y NO por el grupo «attacks», que en el conjunto de
     # reglas de Wazuh abarca ataques de otros tipos.
     "40112": TipoAlerta.AUTENTICACION,
+    # Fase 4b: las demás reglas que dispararon con alertas reales en la corrida del
+    # 2026-11-18 (lab/eventos/README.md). Mismo tipo que ya les daban sus grupos; la
+    # lista es también el conjunto por defecto de la ingesta. 5715 no está: no disparó.
+    "5760": TipoAlerta.AUTENTICACION,
+    "5763": TipoAlerta.AUTENTICACION,
+    "550": TipoAlerta.CAMBIO_ARCHIVOS,
+    "554": TipoAlerta.CAMBIO_ARCHIVOS,
+    "553": TipoAlerta.CAMBIO_ARCHIVOS,
+    "86601": TipoAlerta.ACTIVIDAD_RED,
+    "4151": TipoAlerta.ACTIVIDAD_RED,
 }
 GRUPOS_CAMBIO_ARCHIVOS = frozenset({"syscheck", "syscheck_entry_added",
                                     "syscheck_entry_modified", "syscheck_entry_deleted"})

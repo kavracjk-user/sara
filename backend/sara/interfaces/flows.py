@@ -44,7 +44,9 @@ from sara.aplicacion.pipeline import PASO_LECTURA, investigar  # noqa: E402
 from sara.aplicacion.steps import ejecutar_paso  # noqa: E402
 from sara.dominio.models import (Activo, Caso, Estado, Importancia, Nivel,  # noqa: E402
                                  PrioridadSugerida, RegistroPaso, VistaComun)
-from sara.puertos import CatalogoActivos, FuenteAlertas, RepositorioCasos  # noqa: E402
+from sara.aplicacion.ingesta import ResumenIngesta, ingerir  # noqa: E402
+from sara.puertos import (CatalogoActivos, FuenteAlertas, RepositorioCasos,  # noqa: E402
+                          RepositorioMarcas)
 
 PASO_GUARDADO = "P_guardado_caso"
 
@@ -55,6 +57,8 @@ class Dependencias:
     catalogo: CatalogoActivos
     repositorio: RepositorioCasos
     normalizar: Callable[[dict[str, Any], Optional[str]], VistaComun]
+    marcas: Optional[RepositorioMarcas] = None          # solo para la ingesta
+    ocultar: Callable[[str], str] = lambda texto: texto
 
 
 class _CatalogoComoDiccionario:
@@ -187,3 +191,15 @@ def investigacion_inicial(id_alerta: str) -> Caso:
     return flujo_investigacion(id_alerta, _proveedor(), leer=leer_alerta_t,
                                investigar_=investigar_alerta_t, guardar=guardar_caso_t,
                                releer=releer_caso_t)
+
+
+@flow(name="sara-ingesta-alertas", persist_result=False)
+def ingesta_alertas(reglas: list[str], lote: int) -> ResumenIngesta:
+    """Lee las alertas nuevas del índice (solo consulta) y abre `investigacion_inicial`
+    para cada una de las reglas elegidas (aplicacion/ingesta.py tiene las reglas)."""
+    deps = _proveedor()
+    if deps.marcas is None:
+        raise RuntimeError("Falta el repositorio de la marca de avance de la ingesta.")
+    return ingerir(deps.fuente, deps.marcas, deps.repositorio,  # type: ignore[arg-type]
+                   investigacion_inicial, reglas, lote, ocultar=deps.ocultar)
+
