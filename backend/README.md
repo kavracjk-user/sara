@@ -16,9 +16,10 @@ de alertas en un laboratorio SOC. **No ejecuta bloqueos, aislamiento ni contenci
 | Investigación P2–P5 y decisión P6 | `sara/aplicacion/pipeline.py` | Probado |
 | Lectura de Wazuh (P1) | `sara/adaptadores/wazuh/indexador.py` | Probado contra el indexador del laboratorio con el usuario de solo consulta (PR-10 y relacionadas) |
 | Persistencia (catálogo y casos) | `sara/adaptadores/postgres/` | Probado contra PostgreSQL 16 del Compose raíz: recorrido alerta real → investigar → guardar → releer → `v_exportacion` |
+| Ingesta de alertas nuevas (fase 4b) | `sara/aplicacion/ingesta.py`, `sara/interfaces/ingesta.py`, flujo `ingesta_alertas` | Probada sin servicios y con las alertas reales del índice (pruebas de integración); nunca ejecutada contra la base real fuera de ellas |
 | Flujo Prefect (fase 3) | `sara/interfaces/flows.py` | Probado con Prefect 3.9.5 en proceso (servidor temporal local) contra Wazuh y PostgreSQL reales: P1 leer → P2–P5 → guardar → releer |
-| API del analista (fase 4) | `sara/interfaces/api.py`, `sara/aplicacion/casos.py`, `sara/interfaces/composicion.py` | Probada: 36 pruebas sin servicios y 5 contra Wazuh y PostgreSQL reales; también desde su contenedor. Contrato: `docs/api.md` y `docs/api/openapi.json` |
-| Esquema PostgreSQL | `sql/schema.sql` + `sql/seed_catalogo_anexo_c.sql` (Compose los carga al crear el volumen); `sql/migraciones/` para bases existentes | Probado: se aplica al crear el volumen del contenedor. Fase 2 agregó a `caso` el resto de la vista común (IP, usuario, dominio, archivo, id del agente según la alerta) |
+| API del analista (fases 4 y 4b) | `sara/interfaces/api.py`, `sara/aplicacion/casos.py`, `sara/interfaces/composicion.py` | Probada sin servicios y contra Wazuh y PostgreSQL reales. Fase 4b: hora de obtención de la evidencia, relacionadas con detalle, número de caso, tiempo máximo (504). Contrato: `docs/api.md` y `docs/api/openapi.json` |
+| Esquema PostgreSQL | `sql/schema.sql` + `sql/seed_catalogo_anexo_c.sql` (Compose los carga al crear el volumen); `sql/migraciones/001`–`004` para bases existentes (aplicadas a la del laboratorio) | Probado: se aplica al crear el volumen del contenedor. Fase 2 agregó a `caso` el resto de la vista común (IP, usuario, dominio, archivo, id del agente según la alerta) |
 
 ## Pruebas
 
@@ -121,11 +122,20 @@ docker compose --profile api up -d --build api
   mismo caso (t1 está protegido por un bloqueo de fila, pero el 409 por decisión
   repetida se comprueba fuera de la transacción).
 - Listado y exportación con muchos casos: se cargan todos y se filtran en memoria.
-- `POST /investigaciones` tarda lo que el flujo (≈ 20 s la primera vez por el servidor
-  temporal de Prefect); no hay cola ni tiempo máximo HTTP propio.
+- `POST /investigaciones` tiene tiempo máximo (`SARA_TIMEOUT_INVESTIGACION`, 504), pero
+  no hay cola: cada petición corre su flujo. Probado con un flujo simulado lento, no con
+  un Wazuh realmente lento.
+- Ingesta: solo `--una-vez` (sin bucle ni programación); no se ejecutó contra la base
+  real fuera de las pruebas; una alerta que falle siempre detiene el avance de la marca;
+  rendimiento con miles de alertas por lote.
+- Migraciones: probadas sobre bases temporales (nueva frente a migrada desde la fase 4),
+  sin datos reales de un piloto. No hay herramienta de migraciones: se aplican a mano en
+  orden.
+- La secuencia de `numero_caso` de la base del laboratorio ya avanzó por las pruebas
+  (los números no se reutilizan): el primer caso real no será `C-0001`.
 - HTTPS en la propia API (escucha HTTP en 127.0.0.1); rotación de `API_KEY_SARA`.
-- El contrato frente a RF-09 a RF-14 y la Tabla 4.18 del perfil (no accesible desde el
-  repositorio).
+- RF-12: el repositorio no tiene ninguna referencia; queda [PENDIENTE — autor] en la
+  tabla «Cobertura del perfil» de `docs/api.md`.
 - `uid 1000` en la imagen depende de con qué usuario generó los certificados
   `wazuh-certs-tool` en esta máquina.
 - Aviso de Starlette: «Using httpx with starlette.testclient is deprecated; install

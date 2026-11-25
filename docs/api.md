@@ -2,11 +2,11 @@
 
 Estado: **propuesta**, 2026-11-25. Base para la interfaz del analista (Tabla 4.18).
 
-> **Fuentes.** El perfil (RF-09 a RF-14, Tabla 4.18) está en el Project «sara», que no
-> es accesible desde el repositorio. Este contrato se escribió a partir de
-> `backend/sara/interfaces/api.py` (fase 0), `backend/sql/schema.sql`, el dominio y la
-> especificación de la fase 4. **[PENDIENTE — autor]:** contrastarlo con RF-09 a RF-14 y
-> la Tabla 4.18 y registrar cualquier diferencia.
+> **Fuentes.** Escrito a partir de `backend/sara/interfaces/api.py` (fase 0),
+> `backend/sql/schema.sql`, el dominio y la especificación de la fase 4. **El autor lo
+> contrastó con RF-09 a RF-14, RNF-05 y la Tabla 4.18 del perfil el 25-nov-2026**; las
+> cuatro brechas que encontró (hora de obtención, relacionadas con detalle, número de
+> caso y tiempo máximo) se cerraron en la fase 4b. Ver «Cobertura del perfil» al final.
 
 ## Principios
 
@@ -195,3 +195,27 @@ Todas las respuestas de error usan el mismo cuerpo:
 
 Ningún error incluye trazas, rutas de archivos, consultas SQL, URLs internas ni
 credenciales.
+
+## Cobertura del perfil
+
+Contraste hecho por el autor el 25-nov-2026. El texto de los requisitos está en el perfil
+(Project «sara»), no en el repositorio: la columna «Tema» resume solo lo que el
+repositorio ya registraba de cada uno (etiquetas de las pruebas de la fase 0).
+
+| Requisito / pantalla | Tema | Endpoint | Campos |
+|---|---|---|---|
+| RF-09 | Prioridad sugerida (matriz de la Tabla 3.5) | `GET /casos/{id}`, `GET /casos` | `prioridad.nivel`, `prioridad.nivel_alerta`, `prioridad.importancia`, `prioridad.motivos`; en la lista, `prioridad_sugerida` y el filtro `prioridad` |
+| RF-10 | Prioridad: alertas relacionadas que corroboran; «Información insuficiente» si falta el nivel o el activo no está catalogado | `GET /casos/{id}` | `prioridad.corroborada`, `alertas_relacionadas[]` (id, regla, nivel, marca de tiempo, agente), `total_relacionadas`, `prioridad.motivos` |
+| RF-11 | Decisión del analista con justificación obligatoria y analista | `POST /casos/{id}/decision`, `GET /casos/{id}` | `decision`, `justificacion`, `prioridad_considerada`, `analista`; `decisiones[]` con `registrada_en` |
+| RF-12 | **[PENDIENTE — autor]:** no hay referencia a RF-12 en el repositorio; completar desde el perfil | — | — |
+| RF-13 | Tiempos de la decisión y completitud | `GET /casos/{id}`, `GET /exportacion` | `t0`, `t1` (primera decisión, no cambia), `minutos_hasta_decision`, `completitud` |
+| RF-14 | Exportación para la evaluación comparativa | `GET /exportacion` (`formato=json` o `csv`) | `id`, `numero_caso`, `tipo_alerta`, `procedimiento`, `t0`, `t1`, `minutos_hasta_decision`, `prioridad_sugerida`, `decision` y `prioridad_considerada` de la **primera** decisión, `completitud` |
+| RNF-05 | Procedencia y hora de cada dato | `GET /casos/{id}` | `evidencia[].procedencia`, `evidencia[].obtenida_en`; `pasos[].fuente`, `pasos[].procedencia`, `pasos[].inicio`, `pasos[].fin` |
+| Tabla 4.18 — Lista de casos | | `GET /casos` | `numero_caso`, `tipo_alerta`, `regla_id`, `regla_nivel`, `agente_nombre`, `prioridad_sugerida`, `tiene_decision`, `decision`, `t0`, `t1`; paginación y filtros `prioridad`, `con_decision` |
+| Tabla 4.18 — Expediente | | `GET /casos/{id}` | `numero_caso`, `alerta`, `evidencia`, `indicadores`, `pasos`, `alertas_relacionadas`, `total_relacionadas`, `prioridad`, `decisiones` |
+| Tabla 4.18 — Registro de decisión | | `POST /casos/{id}/decision` | cuerpo con `decision`, `justificacion`, `prioridad_considerada`, `analista`; 201 con el expediente, 409 si es idéntica a la última, 422 si falta algo |
+
+Solo dos rutas escriben (`POST /investigaciones` y `POST /casos/{id}/decision`); la
+ingesta de alertas nuevas es un comando aparte (`python -m sara.interfaces.ingesta
+--una-vez`), no una ruta de la API.
+
