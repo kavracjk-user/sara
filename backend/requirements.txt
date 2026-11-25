@@ -1,5 +1,7 @@
 # Dependencias del backend con versión fijada (comprobadas en PyPI el 2026-11-25).
-# Solo se listan las que se usan y se han probado. FastAPI y Prefect se agregarán en
-# sus fases, cuando se instalen y prueben.
+# Solo se listan las que se usan y se han probado. FastAPI se agregará en su fase.
+# Instalar en un entorno propio:  python -m venv backend/.venv
+#                                 backend/.venv/Scripts/python -m pip install -r backend/requirements.txt
 psycopg[binary]==3.3.9      # adaptador PostgreSQL (fase 2)
 pytest==9.2.0               # pruebas
+prefect==3.9.5              # orquestación del flujo (fase 3)
