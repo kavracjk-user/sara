@@ -33,10 +33,17 @@ def cargar(nombre):
 
 class RepoMemoria:
     def __init__(self):
-        self.casos, self.historial = {}, {}
+        self.casos, self.historial, self.numeros = {}, {}, {}
+        self._siguiente = 1
 
     def guardar(self, caso):
+        if caso.vista.id_alerta not in self.numeros:
+            self.numeros[caso.vista.id_alerta] = self._siguiente
+            self._siguiente += 1
         self.casos[caso.vista.id_alerta] = caso
+
+    def numero_caso(self, id_alerta):
+        return self.numeros.get(id_alerta) if id_alerta in self.casos else None
 
     def obtener(self, id_alerta):
         return self.casos.get(id_alerta)
@@ -303,9 +310,10 @@ def test_exportacion_csv(mundo):
     r = c.get("/exportacion", params={"formato": "csv"}, headers=CABECERA)
     assert r.status_code == 200 and r.headers["content-type"].startswith("text/csv")
     lineas = r.text.splitlines()
-    assert lineas[0] == ("id,tipo_alerta,procedimiento,t0,t1,minutos_hasta_decision,"
-                         "prioridad_sugerida,decision,prioridad_considerada,completitud")
-    assert lineas[1].startswith(cargar("fim_550")["_id"] + ",cambio_archivos,sara,")
+    assert lineas[0] == ("id,numero_caso,tipo_alerta,procedimiento,t0,t1,"
+                         "minutos_hasta_decision,prioridad_sugerida,decision,"
+                         "prioridad_considerada,completitud")
+    assert lineas[1].startswith(cargar("fim_550")["_id"] + ",C-0001,cambio_archivos,sara,")
 
 
 # ---------- errores internos, CORS, contrato ----------
@@ -398,3 +406,23 @@ def test_relacionadas_con_detalle_hasta_50_y_total(mundo):
 def test_sin_relacionadas_total_cero(mundo):
     e = crear(cliente(mundo), cargar("fim_550")["_id"])
     assert e["alertas_relacionadas"] == [] and e["total_relacionadas"] == 0
+
+
+# ---------- número de caso legible ----------
+def test_numero_de_caso_en_lista_expediente_y_exportacion(mundo):
+    c = cliente(mundo)
+    a = crear(c, cargar("auth_5760")["_id"])
+    b = crear(c, cargar("fim_550")["_id"])
+    assert (a["numero_caso"], b["numero_caso"]) == ("C-0001", "C-0002")
+    lista = {x["id"]: x["numero_caso"] for x in c.get("/casos", headers=CABECERA).json()["casos"]}
+    assert lista == {a["id"]: "C-0001", b["id"]: "C-0002"}
+    filas = {f["id"]: f["numero_caso"] for f in
+             c.get("/exportacion", headers=CABECERA).json()["casos"]}
+    assert filas == lista
+    assert c.get(f"/casos/{a['id']}", headers=CABECERA).json()["numero_caso"] == "C-0001"
+
+
+def test_formato_numero():
+    from sara.aplicacion.casos import formato_numero
+    assert (formato_numero(7), formato_numero(12345), formato_numero(None)) ==         ("C-0007", "C-12345", None)
+

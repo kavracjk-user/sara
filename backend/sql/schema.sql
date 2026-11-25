@@ -9,8 +9,13 @@ CREATE TABLE IF NOT EXISTS activo (
     importancia  TEXT NOT NULL CHECK (importancia IN ('Alta', 'Media', 'Baja'))
 );
 
+-- Número de caso legible (fase 4b): correlativo, asignado al crear el caso y nunca
+-- reutilizado (una secuencia no retrocede al borrar). Se muestra como «C-0007».
+CREATE SEQUENCE IF NOT EXISTS caso_numero_seq;
+
 CREATE TABLE IF NOT EXISTS caso (
     id_caso            BIGSERIAL PRIMARY KEY,
+    numero_caso        BIGINT NOT NULL UNIQUE DEFAULT nextval('caso_numero_seq'),
     id_alerta          TEXT NOT NULL UNIQUE,     -- _id en el indexador de Wazuh
     tipo_alerta        TEXT NOT NULL,
     marca_tiempo       TIMESTAMPTZ,
@@ -38,6 +43,8 @@ CREATE TABLE IF NOT EXISTS caso (
     total_relacionadas INTEGER,                  -- fase 4b: total real (se guardan hasta 50)
     CHECK (t1 IS NULL OR t1 >= t0)
 );
+
+ALTER SEQUENCE caso_numero_seq OWNED BY caso.numero_caso;
 
 CREATE TABLE IF NOT EXISTS indicador (
     id_indicador BIGSERIAL PRIMARY KEY,

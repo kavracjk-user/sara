@@ -1091,7 +1091,20 @@
         "properties": {
           "id": {
             "type": "string",
-            "title": "Id"
+            "title": "Id",
+            "description": "_id de la alerta en el índice (se usa en las URL)"
+          },
+          "numero_caso": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Numero Caso",
+            "description": "Número legible, p. ej. C-0007"
           },
           "t0": {
             "type": "string",
@@ -1177,6 +1190,7 @@
         "type": "object",
         "required": [
           "id",
+          "numero_caso",
           "t0",
           "t1",
           "minutos_hasta_decision",
@@ -1212,6 +1226,17 @@
           "id": {
             "type": "string",
             "title": "Id"
+          },
+          "numero_caso": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Numero Caso"
           },
           "tipo_alerta": {
             "type": "string",
@@ -1295,6 +1320,7 @@
         "type": "object",
         "required": [
           "id",
+          "numero_caso",
           "tipo_alerta",
           "procedimiento",
           "t0",
@@ -1578,6 +1604,17 @@
             "type": "string",
             "title": "Id"
           },
+          "numero_caso": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Numero Caso"
+          },
           "tipo_alerta": {
             "type": "string",
             "title": "Tipo Alerta"
@@ -1671,6 +1708,7 @@
         "type": "object",
         "required": [
           "id",
+          "numero_caso",
           "tipo_alerta",
           "regla_id",
           "regla_nivel",

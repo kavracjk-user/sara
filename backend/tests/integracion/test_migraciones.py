@@ -83,3 +83,27 @@ def test_base_nueva_y_base_migrada_tienen_la_misma_estructura(dos_bases):
 
     for parte in ("columnas", "restricciones", "secuencias", "vistas"):
         assert nueva[parte] == migrada[parte], parte
+
+
+def test_migracion_003_numera_los_casos_existentes_por_t0(dos_bases):
+    semilla = (SQL / "seed_catalogo_anexo_c.sql").read_text(encoding="utf-8")
+    anteriores = [m for m in sorted((SQL / "migraciones").glob("*.sql")) if m.name < "003"]
+    with dos_bases["migrada"](autocommit=True) as con:
+        con.execute(_esquema_anterior())
+        con.execute(semilla)
+        for m in anteriores:
+            con.execute(m.read_text(encoding="utf-8"))
+        # Insertados en otro orden que su t0.
+        for id_alerta, t0 in (("c", "2026-11-18T05:00:00Z"), ("a", "2026-11-18T03:00:00Z"),
+                              ("b", "2026-11-18T04:00:00Z")):
+            con.execute("""INSERT INTO caso (id_alerta, tipo_alerta, evidencia_minima, t0)
+                           VALUES (%s, 'autenticacion', '{}', %s)""", (id_alerta, t0))
+        for _ in range(2):                                     # idempotente
+            con.execute((SQL / "migraciones" / "003_numero_caso.sql").read_text(encoding="utf-8"))
+        numeros = dict(con.execute("SELECT id_alerta, numero_caso FROM caso").fetchall())
+        assert numeros == {"a": 1, "b": 2, "c": 3}
+        nuevo = con.execute("""INSERT INTO caso (id_alerta, tipo_alerta, evidencia_minima, t0)
+                               VALUES ('d', 'autenticacion', '{}', now())
+                               RETURNING numero_caso""").fetchone()[0]
+        assert nuevo == 4
+

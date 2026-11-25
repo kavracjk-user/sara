@@ -51,35 +51,37 @@ class RepositorioPostgres:
         with self._conectar() as con, con.transaction():
             catalogado = v.agente_id and con.execute(
                 "SELECT 1 FROM activo WHERE id_agente = %s", (v.agente_id,)).fetchone()
-            id_caso = con.execute(
-                """
-                INSERT INTO caso (id_alerta, tipo_alerta, marca_tiempo, regla_id, regla_nivel,
-                    regla_descripcion, id_agente, agente_id_alerta, agente_nombre, ip_origen,
-                    ip_destino, usuario, dominio, archivo_ruta, archivo_hash, evento,
-                    campos_ausentes, evidencia_minima, procedimiento, t0, t1)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-                        %s, %s, %s, %s, %s)
-                ON CONFLICT (id_alerta) DO UPDATE SET
-                    tipo_alerta = EXCLUDED.tipo_alerta, marca_tiempo = EXCLUDED.marca_tiempo,
-                    regla_id = EXCLUDED.regla_id, regla_nivel = EXCLUDED.regla_nivel,
-                    regla_descripcion = EXCLUDED.regla_descripcion,
-                    id_agente = EXCLUDED.id_agente,
-                    agente_id_alerta = EXCLUDED.agente_id_alerta,
-                    agente_nombre = EXCLUDED.agente_nombre, ip_origen = EXCLUDED.ip_origen,
-                    ip_destino = EXCLUDED.ip_destino, usuario = EXCLUDED.usuario,
-                    dominio = EXCLUDED.dominio, archivo_ruta = EXCLUDED.archivo_ruta,
-                    archivo_hash = EXCLUDED.archivo_hash, evento = EXCLUDED.evento,
-                    campos_ausentes = EXCLUDED.campos_ausentes,
-                    evidencia_minima = EXCLUDED.evidencia_minima,
-                    t1 = COALESCE(caso.t1, EXCLUDED.t1)
-                RETURNING id_caso
-                """,
-                (v.id_alerta, v.tipo_alerta.value, v.marca_tiempo, v.regla_id, v.regla_nivel,
-                 v.regla_descripcion, v.agente_id if catalogado else None, v.agente_id,
-                 v.agente_nombre, v.ip_origen, v.ip_destino, v.usuario, v.dominio,
-                 v.archivo_ruta, v.archivo_hash, v.evento, list(v.campos_ausentes),
-                 Jsonb(a_json(v.evidencia_minima)), self.procedimiento_por_defecto, caso.t0, caso.t1),
-            ).fetchone()[0]
+            # Primero se busca: un INSERT ... ON CONFLICT consumiría un número de caso aunque
+            # el caso ya existiera, y la numeración dejaría huecos al volver a guardar.
+            existente = con.execute("SELECT id_caso FROM caso WHERE id_alerta = %s FOR UPDATE",
+                                    (v.id_alerta,)).fetchone()
+            valores = (v.tipo_alerta.value, v.marca_tiempo, v.regla_id, v.regla_nivel,
+                       v.regla_descripcion, v.agente_id if catalogado else None, v.agente_id,
+                       v.agente_nombre, v.ip_origen, v.ip_destino, v.usuario, v.dominio,
+                       v.archivo_ruta, v.archivo_hash, v.evento, list(v.campos_ausentes),
+                       Jsonb(a_json(v.evidencia_minima)))
+            if existente:
+                id_caso = existente[0]
+                con.execute(
+                    """UPDATE caso SET tipo_alerta = %s, marca_tiempo = %s, regla_id = %s,
+                           regla_nivel = %s, regla_descripcion = %s, id_agente = %s,
+                           agente_id_alerta = %s, agente_nombre = %s, ip_origen = %s,
+                           ip_destino = %s, usuario = %s, dominio = %s, archivo_ruta = %s,
+                           archivo_hash = %s, evento = %s, campos_ausentes = %s,
+                           evidencia_minima = %s, t1 = COALESCE(t1, %s)
+                       WHERE id_caso = %s""", valores + (caso.t1, id_caso))
+            else:
+                id_caso = con.execute(
+                    """INSERT INTO caso (tipo_alerta, marca_tiempo, regla_id, regla_nivel,
+                           regla_descripcion, id_agente, agente_id_alerta, agente_nombre,
+                           ip_origen, ip_destino, usuario, dominio, archivo_ruta,
+                           archivo_hash, evento, campos_ausentes, evidencia_minima,
+                           id_alerta, procedimiento, t0, t1)
+                       VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+                               %s, %s, %s, %s, %s, %s)
+                       RETURNING id_caso""",
+                    valores + (v.id_alerta, self.procedimiento_por_defecto, caso.t0, caso.t1),
+                ).fetchone()[0]
 
             for tabla in ("indicador", "ejecucion_paso", "prioridad_sugerida",
                           "alerta_relacionada"):
@@ -161,6 +163,12 @@ class RepositorioPostgres:
     def relacionadas_de(self, id_alerta: str) -> AlertasRelacionadas:
         with self._conectar() as con:
             return _leer_relacionadas(con, id_alerta)
+
+    def numero_caso(self, id_alerta: str) -> Optional[int]:
+        with self._conectar() as con:
+            fila = con.execute("SELECT numero_caso FROM caso WHERE id_alerta = %s",
+                               (id_alerta,)).fetchone()
+        return fila[0] if fila else None
 
     def procedimiento(self, id_alerta: str) -> Optional[str]:
         with self._conectar() as con:

@@ -103,6 +103,10 @@ class RepositorioExpedientes(RepositorioCasos, Protocol):
 
     def procedimiento(self, id_alerta: str) -> Optional[str]: ...
 
+    def numero_caso(self, id_alerta: str) -> Optional[int]:
+        """Correlativo asignado al crear el caso; nunca se reutiliza."""
+        ...
+
     def relacionadas_de(self, id_alerta: str) -> AlertasRelacionadas:
         """Las alertas relacionadas tal como se guardaron al investigar."""
         ...

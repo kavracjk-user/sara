@@ -135,3 +135,24 @@ def test_la_conexion_no_muestra_claves_en_los_informes(conectar_pg):
     clave = conectar_pg._ConectarPG__env["POSTGRES_PASSWORD"]
     aparece = bool(clave) and clave in repr(conectar_pg)
     assert not aparece, "la clave de PostgreSQL aparece en el repr de la fixture"
+
+
+# ---------- número de caso (fase 4b) ----------
+def test_numeros_consecutivos_sin_reutilizar_y_estables(indexador, conectar_pg, repo):
+    catalogo = CatalogoPostgres(conectar_pg).todos()
+    ids = []
+    for regla in ("5760", "550", "4151"):
+        doc = _alerta(indexador, {"term": {"rule.id": regla}})
+        caso = investigar(doc, catalogo, normalizar)
+        repo.guardar(caso)
+        ids.append((doc["_id"], caso))
+    n = [repo.numero_caso(i) for i, _ in ids]
+    assert n[1] == n[0] + 1 and n[2] == n[1] + 1              # consecutivos
+
+    repo.guardar(ids[0][1])                                     # volver a guardar
+    assert repo.numero_caso(ids[0][0]) == n[0]                  # no cambia
+
+    with conectar_pg() as con:                                  # borrar el último
+        con.execute("DELETE FROM caso WHERE id_alerta = %s", (ids[2][0],))
+    repo.guardar(ids[2][1])                                     # se crea de nuevo
+    assert repo.numero_caso(ids[2][0]) == n[2] + 1              # no reutiliza n[2]

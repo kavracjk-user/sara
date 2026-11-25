@@ -50,6 +50,11 @@ class Expediente:
     caso: Caso
     decisiones: list[DecisionRegistrada]
     relacionadas: AlertasRelacionadas = AlertasRelacionadas(0)
+    numero: Optional[int] = None
+
+    @property
+    def numero_caso(self) -> Optional[str]:
+        return formato_numero(self.numero)
 
     @property
     def minutos_hasta_decision(self) -> Optional[float]:
@@ -104,13 +109,15 @@ class ServicioCasos:
         if caso is None:
             raise CasoNoEncontrado("No existe un caso con ese id.")
         return Expediente(caso, self._repo.decisiones(id_alerta),
-                          self._repo.relacionadas_de(id_alerta))
+                          self._repo.relacionadas_de(id_alerta),
+                          self._repo.numero_caso(id_alerta))
 
     def listar(self, pagina: int = 1, tamano: int = 20, prioridad: Optional[Nivel] = None,
                con_decision: Optional[bool] = None) -> Pagina:
         if pagina < 1 or not 1 <= tamano <= 100:
             raise DatosInvalidos("Paginación fuera de rango.", "pagina")
-        expedientes = [Expediente(c, self._repo.decisiones(c.vista.id_alerta or ""))
+        expedientes = [Expediente(c, self._repo.decisiones(c.vista.id_alerta or ""),
+                                  numero=self._repo.numero_caso(c.vista.id_alerta or ""))
                        for c in self._repo.listar()]
         if prioridad is not None:
             expedientes = [e for e in expedientes
@@ -165,6 +172,7 @@ class ServicioCasos:
             registrados = obligatorios - set(caso.vista.campos_ausentes)
             filas.append({
                 "id": id_alerta,
+                "numero_caso": formato_numero(self._repo.numero_caso(id_alerta)),
                 "tipo_alerta": caso.vista.tipo_alerta.value,
                 "procedimiento": self._repo.procedimiento(id_alerta),
                 "t0": _iso(caso.t0),
@@ -177,6 +185,11 @@ class ServicioCasos:
                 "completitud": round(completitud(obligatorios, registrados), 1),
             })
         return filas
+
+
+def formato_numero(numero: Optional[int]) -> Optional[str]:
+    """12 -> «C-0012». Más de 9999 casos siguen creciendo (C-10000)."""
+    return None if numero is None else f"C-{numero:04d}"
 
 
 def _misma(a: DecisionRegistrada, b: DecisionRegistrada) -> bool:

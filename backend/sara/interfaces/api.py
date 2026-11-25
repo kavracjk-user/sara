@@ -35,7 +35,7 @@ log = logging.getLogger("sara.api")
 PATRON_ID = r"^[A-Za-z0-9_-]{1,64}$"
 ORIGEN_CORS_POR_DEFECTO = "http://localhost:5173"
 DATO_NO_DISPONIBLE = "dato no disponible"
-COLUMNAS_EXPORTACION = ("id", "tipo_alerta", "procedimiento", "t0", "t1",
+COLUMNAS_EXPORTACION = ("id", "numero_caso", "tipo_alerta", "procedimiento", "t0", "t1",
                         "minutos_hasta_decision", "prioridad_sugerida", "decision",
                         "prioridad_considerada", "completitud")
 
@@ -130,7 +130,8 @@ class RelacionadaSalida(BaseModel):
 
 
 class ExpedienteSalida(BaseModel):
-    id: str
+    id: str = Field(description="_id de la alerta en el índice (se usa en las URL)")
+    numero_caso: Optional[str] = Field(description="Número legible, p. ej. C-0007")
     t0: str
     t1: Optional[str]
     minutos_hasta_decision: Optional[float]
@@ -147,6 +148,7 @@ class ExpedienteSalida(BaseModel):
 
 class ResumenCaso(BaseModel):
     id: str
+    numero_caso: Optional[str]
     tipo_alerta: str
     regla_id: Optional[str]
     regla_nivel: Optional[int]
@@ -173,6 +175,7 @@ class Salud(BaseModel):
 
 class FilaExportacion(BaseModel):
     id: str
+    numero_caso: Optional[str]
     tipo_alerta: str
     procedimiento: Optional[str]
     t0: str
@@ -300,7 +303,7 @@ def crear_app(cfg: ConfiguracionAPI) -> FastAPI:
         procedencia = ev.pop("procedencia", {}) or {}
         obtenida_en = exp.obtenida_en.isoformat() if exp.obtenida_en else None
         return {
-            "id": v.id_alerta, "t0": c.t0.isoformat(),
+            "id": v.id_alerta, "numero_caso": exp.numero_caso, "t0": c.t0.isoformat(),
             "t1": c.t1.isoformat() if c.t1 else None,
             "minutos_hasta_decision": exp.minutos_hasta_decision,
             "alerta": {"tipo_alerta": v.tipo_alerta.value, "marca_tiempo": v.marca_tiempo,
@@ -371,7 +374,8 @@ def crear_app(cfg: ConfiguracionAPI) -> FastAPI:
         except Exception as e:
             raise traducir(e)
         return {"pagina": p.pagina, "tamano": p.tamano, "total": p.total, "casos": [{
-            "id": e.caso.vista.id_alerta, "tipo_alerta": e.caso.vista.tipo_alerta.value,
+            "id": e.caso.vista.id_alerta, "numero_caso": e.numero_caso,
+            "tipo_alerta": e.caso.vista.tipo_alerta.value,
             "regla_id": e.caso.vista.regla_id, "regla_nivel": e.caso.vista.regla_nivel,
             "agente_id": e.caso.vista.agente_id, "agente_nombre": e.caso.vista.agente_nombre,
             "prioridad_sugerida": e.caso.prioridad.nivel.value if e.caso.prioridad else None,

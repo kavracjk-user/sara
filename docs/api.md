@@ -25,6 +25,15 @@ El id de un caso es el **`_id` del índice de Wazuh** de su alerta (el mismo
 identificador que usa todo SARA desde la fase 1). En la URL debe cumplir
 `^[A-Za-z0-9_-]{1,64}$`; lo demás se rechaza con 422.
 
+## Número de caso
+
+Además del id, cada caso tiene `numero_caso` con formato `C-0007`: un correlativo
+asignado al crearlo (secuencia de PostgreSQL), que **nunca se reutiliza**, ni siquiera
+si se borra un caso. Volver a guardar un caso no cambia su número. Aparece en la lista,
+el expediente y la exportación; las URL siguen usando el id. Más de 9999 casos siguen
+creciendo (`C-10000`). Un número puede quedar sin usar si una creación falla a mitad de
+la transacción (las secuencias no retroceden).
+
 ## Seguridad
 
 | Aspecto | Regla |
@@ -67,7 +76,8 @@ Parámetros: `pagina` (≥ 1, por defecto 1), `tamano` (1–100, por defecto 20)
 
 ```json
 {"pagina": 1, "tamano": 20, "total": 2,
- "casos": [{"id": "...", "tipo_alerta": "autenticacion", "regla_id": "5763",
+ "casos": [{"id": "...", "numero_caso": "C-0007", "tipo_alerta": "autenticacion",
+            "regla_id": "5763",
             "regla_nivel": 10, "agente_id": "001", "agente_nombre": "srv-web",
             "prioridad_sugerida": "Alta", "tiene_decision": false,
             "decision": null, "t0": "...", "t1": null}]}
@@ -78,7 +88,8 @@ Expediente completo.
 
 ```json
 {
-  "id": "...", "t0": "...", "t1": null, "minutos_hasta_decision": null,
+  "id": "...", "numero_caso": "C-0007", "t0": "...", "t1": null,
+  "minutos_hasta_decision": null,
   "alerta": {"tipo_alerta": "...", "marca_tiempo": "...", "regla_id": "...",
              "regla_nivel": 10, "regla_descripcion": "...", "agente_id": "001",
              "agente_nombre": "srv-web", "ip_origen": "...", "ip_destino": null,
@@ -145,7 +156,7 @@ Registra la decisión del analista.
 Casos para la evaluación comparativa (RF-14). Parámetro `formato`: `json` (por
 defecto) o `csv`.
 
-Columnas: `id`, `tipo_alerta`, `procedimiento`, `t0`, `t1`, `minutos_hasta_decision`,
+Columnas: `id`, `numero_caso`, `tipo_alerta`, `procedimiento`, `t0`, `t1`, `minutos_hasta_decision`,
 `prioridad_sugerida`, `decision` (la **primera**), `prioridad_considerada` (de la
 primera), `completitud` (% de campos obligatorios del tipo de alerta que se
 registraron).
