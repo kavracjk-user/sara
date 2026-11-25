@@ -78,6 +78,15 @@ def dependencias_desde_entorno(env: Optional[Mapping[str, str]] = None):
     return deps, base_disponible
 
 
+def tiempo_maximo(env: Mapping[str, str]) -> float:
+    """SARA_TIMEOUT_INVESTIGACION en segundos (por defecto 90)."""
+    from sara.aplicacion.casos import TIEMPO_MAXIMO_INVESTIGACION_S
+    valor = float(env.get("SARA_TIMEOUT_INVESTIGACION") or TIEMPO_MAXIMO_INVESTIGACION_S)
+    if valor <= 0:
+        raise ValueError("SARA_TIMEOUT_INVESTIGACION debe ser positivo.")
+    return valor
+
+
 def crear_app_desde_entorno(env: Optional[Mapping[str, str]] = None) -> FastAPI:
     env = os.environ if env is None else env
     from sara.adaptadores.wazuh.normalizer import OBLIGATORIOS
@@ -86,7 +95,8 @@ def crear_app_desde_entorno(env: Optional[Mapping[str, str]] = None) -> FastAPI:
 
     deps, base_disponible = dependencias_desde_entorno(env)
     servicio = ServicioCasos(deps.repositorio, flows.investigacion_inicial,  # type: ignore[arg-type]
-                             lambda tipo: OBLIGATORIOS[tipo])
+                             lambda tipo: OBLIGATORIOS[tipo],
+                             tiempo_maximo_s=tiempo_maximo(env))
     return crear_app(ConfiguracionAPI(
         servicio=servicio,
         clave_api=env.get("API_KEY_SARA") or None,

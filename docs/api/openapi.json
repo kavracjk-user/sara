@@ -230,6 +230,16 @@
               }
             },
             "description": "Service Unavailable"
+          },
+          "504": {
+            "description": "La investigación superó SARA_TIMEOUT_INVESTIGACION",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespuestaError"
+                }
+              }
+            }
           }
         }
       }

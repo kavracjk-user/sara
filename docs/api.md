@@ -66,6 +66,15 @@ Cuerpo: `{"id_alerta": "EFMA7aEBs5MtR6RaAjmP"}`
 | 409 | Ya existe un caso para esa alerta (no se re-investiga: cambiaría la evidencia que el analista ya pudo ver). |
 | 422 | `id_alerta` con formato inválido. |
 | 503 | No se pudo leer la alerta (P1 «fallido») o no se pudo guardar el caso. |
+| 504 | La investigación superó `SARA_TIMEOUT_INVESTIGACION` (90 s por defecto). No se crea el caso. |
+
+**Tiempo máximo.** El flujo corre con un límite. Si se agota, la API responde 504 sin
+esperar más. El flujo puede seguir corriendo en segundo plano, pero recibe el mismo
+límite y **no guarda** si ya pasó cuando llega a guardar; guardar es una sola
+transacción, así que nunca queda un caso a medias. Caso límite: si el guardado ya había
+empezado justo antes del límite, el caso queda completo aunque la respuesta haya sido
+504; un reintento recibe entonces 409. La primera investigación tras arrancar la API
+tarda más (≈ 20 s) porque Prefect abre su servidor temporal.
 
 ### GET /casos
 Lista paginada, de más reciente a más antiguo (`t0`).
@@ -182,6 +191,7 @@ Todas las respuestas de error usan el mismo cuerpo:
 | 422 | `datos_invalidos` | «Los datos enviados no son válidos.»; `detalles` = `[{"campo": "justificacion", "problema": "..."}]` (sin repetir el valor enviado). |
 | 500 | `error_interno` | «Error interno. El detalle quedó en el registro del servidor.» |
 | 503 | `servicio_no_disponible` | «Una dependencia no está disponible.» / «La API no tiene clave configurada.» |
+| 504 | `tiempo_agotado` | «La investigación superó el tiempo máximo. No se creó el caso.» |
 
 Ningún error incluye trazas, rutas de archivos, consultas SQL, URLs internas ni
 credenciales.

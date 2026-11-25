@@ -82,7 +82,7 @@ class Mundo:
         self.error_lectura, self.error_paso = error_lectura, error_paso
         self.relacionadas_fijas = []
 
-    def investigar(self, id_alerta):
+    def investigar(self, id_alerta, limite_epoch=None):
         inicio = ahora()
         if self.error_lectura:
             return Caso(vista=VistaComun(id_alerta=id_alerta), pasos=[RegistroPaso(
@@ -425,4 +425,43 @@ def test_numero_de_caso_en_lista_expediente_y_exportacion(mundo):
 def test_formato_numero():
     from sara.aplicacion.casos import formato_numero
     assert (formato_numero(7), formato_numero(12345), formato_numero(None)) ==         ("C-0007", "C-12345", None)
+
+
+# ---------- tiempo máximo de la investigación (504) ----------
+def test_investigacion_lenta_504_sin_caso_a_medias(mundo):
+    import threading
+    import time as _time
+    terminado = threading.Event()
+    rapido = mundo.investigar
+
+    def lento(id_alerta, limite_epoch=None):
+        # Simula el flujo real: tarda y, antes de guardar, respeta el límite.
+        _time.sleep(0.6)
+        try:
+            if limite_epoch is not None and _time.time() > limite_epoch:
+                from sara.aplicacion.casos import TiempoAgotado
+                raise TiempoAgotado("límite vencido antes de guardar")
+            return rapido(id_alerta, limite_epoch)
+        finally:
+            terminado.set()
+
+    servicio = ServicioCasos(mundo.repo, lento, lambda t: OBLIGATORIOS[t], tiempo_maximo_s=0.2)
+    app = crear_app(ConfiguracionAPI(servicio, CLAVE))
+    c = TestClient(app, raise_server_exceptions=False)
+    r = c.post("/investigaciones", json={"id_alerta": cargar("auth_5760")["_id"]},
+               headers=CABECERA)
+    assert r.status_code == 504
+    assert r.json()["error"] == {"codigo": "tiempo_agotado", "detalles": [], "mensaje":
+                                 "La investigación superó el tiempo máximo. No se creó el caso."}
+    assert terminado.wait(5)                               # el hilo terminó...
+    assert mundo.repo.casos == {}                          # ...y no dejó ningún caso
+
+
+def test_tiempo_maximo_desde_el_entorno():
+    from sara.interfaces.composicion import tiempo_maximo
+    assert tiempo_maximo({}) == 90.0
+    assert tiempo_maximo({"SARA_TIMEOUT_INVESTIGACION": "30"}) == 30.0
+    for malo in ("0", "-5", "mucho"):
+        with pytest.raises(ValueError):
+            tiempo_maximo({"SARA_TIMEOUT_INVESTIGACION": malo})
 

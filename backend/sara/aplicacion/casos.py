@@ -6,6 +6,9 @@ casos (por la investigación) y decisiones del analista. Nada se escribe en Wazu
 """
 from __future__ import annotations
 
+import time
+from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import TimeoutError as FuturoVencido
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Callable, Iterable, Optional
@@ -43,6 +46,13 @@ class DatosInvalidos(ErrorCaso):
 
 class DependenciaNoDisponible(ErrorCaso):
     pass
+
+
+class TiempoAgotado(ErrorCaso):
+    pass
+
+
+TIEMPO_MAXIMO_INVESTIGACION_S = 90.0
 
 
 @dataclass
@@ -83,19 +93,34 @@ Obligatorios = Callable[[TipoAlerta], Iterable[str]]
 
 class ServicioCasos:
     def __init__(self, repositorio: RepositorioExpedientes, investigar: Investigar,
-                 obligatorios: Obligatorios) -> None:
+                 obligatorios: Obligatorios,
+                 tiempo_maximo_s: float = TIEMPO_MAXIMO_INVESTIGACION_S) -> None:
+        if tiempo_maximo_s <= 0:
+            raise ValueError("El tiempo máximo de la investigación debe ser positivo.")
         self._repo = repositorio
         self._investigar = investigar
         self._obligatorios = obligatorios
+        self.tiempo_maximo_s = tiempo_maximo_s
 
     # ---------- investigar ----------
     def investigar(self, id_alerta: str) -> Expediente:
         if self._repo.obtener(id_alerta) is not None:
             raise Conflicto("Ya existe un caso para esa alerta.")
+        # El flujo corre en otro hilo con un límite. Si se agota: TiempoAgotado (504). El
+        # hilo no se puede detener, pero el flujo recibe el límite y NO guarda si ya pasó.
+        limite = time.time() + self.tiempo_maximo_s
+        ejecutor = ThreadPoolExecutor(max_workers=1)
+        futuro = ejecutor.submit(self._investigar, id_alerta, limite_epoch=limite)
         try:
-            caso = self._investigar(id_alerta)
+            caso = futuro.result(timeout=self.tiempo_maximo_s)
+        except FuturoVencido:
+            raise TiempoAgotado("La investigación superó el tiempo máximo.") from None
+        except TiempoAgotado:
+            raise
         except Exception as e:  # el flujo no pudo guardar o falló algo externo
             raise DependenciaNoDisponible("No se pudo completar la investigación.") from e
+        finally:
+            ejecutor.shutdown(wait=False)
         lectura = caso.pasos[0] if caso.pasos else None
         if lectura is not None and lectura.estado is Estado.SIN_RESULTADO:
             raise AlertaNoEncontrada("La alerta no existe en el índice.")

@@ -27,7 +27,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from sara.aplicacion.casos import (AlertaNoEncontrada, CasoNoEncontrado, Conflicto,
                                    DatosInvalidos, DependenciaNoDisponible, Expediente,
-                                   ServicioCasos)
+                                   ServicioCasos, TiempoAgotado)
 from sara.dominio.models import Nivel
 
 log = logging.getLogger("sara.api")
@@ -207,6 +207,8 @@ class RespuestaError(BaseModel):
 
 
 _ERRORES = {c: {"model": RespuestaError} for c in (400, 401, 404, 409, 422, 500, 503)}
+_ERROR_504 = {504: {"model": RespuestaError,
+                    "description": "La investigación superó SARA_TIMEOUT_INVESTIGACION"}}
 
 
 # ---------- errores ----------
@@ -295,6 +297,9 @@ def crear_app(cfg: ConfiguracionAPI) -> FastAPI:
                              [{"campo": e.campo or "cuerpo", "problema": str(e)}])
         if isinstance(e, DependenciaNoDisponible):
             return _ErrorAPI(503, "servicio_no_disponible", str(e))
+        if isinstance(e, TiempoAgotado):
+            return _ErrorAPI(504, "tiempo_agotado",
+                             "La investigación superó el tiempo máximo. No se creó el caso.")
         raise e
 
     def a_salida(exp: Expediente) -> dict:
@@ -356,7 +361,7 @@ def crear_app(cfg: ConfiguracionAPI) -> FastAPI:
         return {"estado": "ok" if todo_ok else "degradado", "dependencias": estados}
 
     @app.post("/investigaciones", response_model=ExpedienteSalida, status_code=201,
-              dependencies=protegido, tags=["casos"])
+              dependencies=protegido, tags=["casos"], responses=_ERROR_504)
     def investigar(solicitud: SolicitudInvestigacion) -> dict:
         try:
             return a_salida(cfg.servicio.investigar(solicitud.id_alerta))

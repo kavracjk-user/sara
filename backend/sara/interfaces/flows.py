@@ -22,6 +22,7 @@ SARA no ejecuta bloqueos, aislamiento ni contención (RNF-01).
 from __future__ import annotations
 
 import os
+import time
 from contextlib import contextmanager
 from dataclasses import dataclass, replace
 from pathlib import Path
@@ -44,6 +45,7 @@ from sara.aplicacion.pipeline import PASO_LECTURA, investigar  # noqa: E402
 from sara.aplicacion.steps import ejecutar_paso  # noqa: E402
 from sara.dominio.models import (Activo, Caso, Estado, Importancia, Nivel,  # noqa: E402
                                  PrioridadSugerida, RegistroPaso, VistaComun)
+from sara.aplicacion.casos import TiempoAgotado  # noqa: E402
 from sara.aplicacion.ingesta import ResumenIngesta, ingerir  # noqa: E402
 from sara.puertos import (CatalogoActivos, FuenteAlertas, RepositorioCasos,  # noqa: E402
                           RepositorioMarcas)
@@ -120,8 +122,14 @@ def flujo_investigacion(
     investigar_: Callable[..., Caso] = investigar_alerta,
     guardar: Callable[..., RegistroPaso] = guardar_caso,
     releer: Callable[..., Optional[Caso]] = releer_caso,
+    limite_epoch: Optional[float] = None,
 ) -> Caso:
-    """Orden y reglas del flujo. El flujo de Prefect la llama con sus tareas."""
+    """Orden y reglas del flujo. El flujo de Prefect la llama con sus tareas.
+
+    `limite_epoch` (segundos desde 1970): si ya pasó cuando toca guardar, el caso NO se
+    guarda y se lanza TiempoAgotado. Así una investigación que la API dio por vencida
+    (504) no deja un caso guardado después. Guardar es una sola transacción: nunca
+    queda un caso a medias."""
     lectura = leer(id_alerta, deps)
     if lectura.estado is not Estado.CON_RESULTADO:
         return caso_sin_alerta(id_alerta, lectura)
@@ -131,6 +139,8 @@ def flujo_investigacion(
     # lo necesario); la evidencia mínima ya está en la vista común.
     caso.pasos.insert(0, replace(lectura, resultado={"_id": id_alerta}))
 
+    if limite_epoch is not None and time.time() > limite_epoch:
+        raise TiempoAgotado(f"Tiempo máximo agotado antes de guardar el caso {id_alerta}.")
     guardado = guardar(caso, deps)
     if guardado.estado is not Estado.CON_RESULTADO:
         raise RuntimeError(f"El caso {id_alerta} NO se guardó: {guardado.error}")
@@ -186,11 +196,12 @@ releer_caso_t = task(releer_caso, name="releer_caso", **_tarea)
 
 
 @flow(name="sara-investigacion-inicial", persist_result=False)
-def investigacion_inicial(id_alerta: str) -> Caso:
-    """P1 -> P5 -> guardar -> releer. El caso queda listo para el analista (P6)."""
+def investigacion_inicial(id_alerta: str, limite_epoch: Optional[float] = None) -> Caso:
+    """P1 -> P5 -> guardar -> releer. El caso queda listo para el analista (P6).
+    `limite_epoch`: ver flujo_investigacion (solo un número, sin credenciales)."""
     return flujo_investigacion(id_alerta, _proveedor(), leer=leer_alerta_t,
                                investigar_=investigar_alerta_t, guardar=guardar_caso_t,
-                               releer=releer_caso_t)
+                               releer=releer_caso_t, limite_epoch=limite_epoch)
 
 
 @flow(name="sara-ingesta-alertas", persist_result=False)

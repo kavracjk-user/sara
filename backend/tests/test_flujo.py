@@ -141,8 +141,20 @@ def test_agente_099_no_catalogado_es_informacion_insuficiente():
 
 
 # ---------- configuración de Prefect ----------
-def test_el_flujo_solo_recibe_el_id_de_la_alerta():
-    assert list(inspect.signature(flows.investigacion_inicial.fn).parameters) == ["id_alerta"]
+def test_el_flujo_solo_recibe_el_id_y_el_limite():
+    # Ningún objeto con credenciales como parámetro: solo texto y un número.
+    params = inspect.signature(flows.investigacion_inicial.fn).parameters
+    assert list(params) == ["id_alerta", "limite_epoch"]
+
+
+def test_limite_vencido_no_guarda_el_caso():
+    import time
+    from sara.aplicacion.casos import TiempoAgotado
+    doc = cargar("auth_5760")
+    d = deps(doc)
+    with pytest.raises(TiempoAgotado):
+        flows.flujo_investigacion(doc["_id"], d, limite_epoch=time.time() - 1)
+    assert d.repositorio.casos == {}
 
 
 def test_prefect_sin_analitica_ni_interfaz_y_fuera_de_git():
