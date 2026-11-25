@@ -157,6 +157,12 @@ class _Proveedor(Protocol):
 _proveedor: _Proveedor = dependencias_desde_entorno
 
 
+def configurar_dependencias(deps: Dependencias) -> None:
+    """Punto de composición (composicion.py): el flujo usa estas dependencias."""
+    global _proveedor
+    _proveedor = lambda: deps  # noqa: E731
+
+
 @contextmanager
 def usar_dependencias(deps: Dependencias) -> Iterator[None]:
     """Para pruebas: el flujo usa estas dependencias en lugar de las del entorno."""

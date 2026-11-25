@@ -23,6 +23,7 @@ import psycopg
 from psycopg.types.json import Jsonb
 
 from sara.adaptadores.postgres.serializacion import a_json
+from sara.puertos import DecisionRegistrada
 from sara.dominio.models import (Caso, Estado, Importancia, Indicador, Nivel, NivelAlerta,
                                  PrioridadSugerida, RegistroPaso, TipoAlerta,
                                  TipoIndicador, VistaComun)
@@ -115,6 +116,41 @@ class RepositorioPostgres:
                         """INSERT INTO decision_humana (id_caso, decision,
                                prioridad_considerada, justificacion) VALUES (%s, %s, %s, %s)""",
                         (id_caso, caso.decision, nueva[2], caso.justificacion))
+
+    # ---------- decisiones con analista (fase 4) ----------
+    def registrar_decision(self, id_alerta: str, decision: DecisionRegistrada,
+                           t1: datetime) -> None:
+        """Agrega la decisión y fija t1 solo si estaba vacío, en una transacción con el
+        caso bloqueado (dos decisiones simultáneas no pisan t1)."""
+        with self._conectar() as con, con.transaction():
+            fila = con.execute("SELECT id_caso FROM caso WHERE id_alerta = %s FOR UPDATE",
+                               (id_alerta,)).fetchone()
+            if fila is None:
+                raise LookupError("No existe el caso.")
+            con.execute("UPDATE caso SET t1 = COALESCE(t1, %s) WHERE id_caso = %s",
+                        (t1, fila[0]))
+            con.execute(
+                """INSERT INTO decision_humana (id_caso, decision, prioridad_considerada,
+                       justificacion, analista, registrada_en)
+                   VALUES (%s, %s, %s, %s, %s, %s)""",
+                (fila[0], decision.decision, decision.prioridad_considerada.value,
+                 decision.justificacion, decision.analista, decision.registrada_en))
+
+    def decisiones(self, id_alerta: str) -> list[DecisionRegistrada]:
+        with self._conectar() as con:
+            filas = con.execute(
+                """SELECT d.decision, d.justificacion, d.prioridad_considerada, d.analista,
+                          d.registrada_en
+                   FROM decision_humana d JOIN caso c USING (id_caso)
+                   WHERE c.id_alerta = %s ORDER BY d.registrada_en, d.id_decision""",
+                (id_alerta,)).fetchall()
+        return [DecisionRegistrada(f[0], f[1], Nivel(f[2]), f[3], f[4]) for f in filas]
+
+    def procedimiento(self, id_alerta: str) -> Optional[str]:
+        with self._conectar() as con:
+            fila = con.execute("SELECT procedimiento FROM caso WHERE id_alerta = %s",
+                               (id_alerta,)).fetchone()
+        return fila[0] if fila else None
 
     # ---------- lectura ----------
     def obtener(self, id_alerta: str) -> Optional[Caso]:

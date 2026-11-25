@@ -82,6 +82,7 @@ CREATE TABLE IF NOT EXISTS decision_humana (
                           ('escalar', 'descartar', 'solicitar_mas_informacion')),
     prioridad_considerada TEXT NOT NULL,
     justificacion         TEXT NOT NULL CHECK (length(btrim(justificacion)) > 0),
+    analista              TEXT,                  -- RF-11 (fase 4); seudónimo en el piloto
     registrada_en         TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 

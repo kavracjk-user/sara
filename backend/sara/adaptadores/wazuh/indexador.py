@@ -49,6 +49,14 @@ class IndexadorWazuh:
         with self._abrir(req, timeout=self.timeout_s) as r:
             return json.load(r)
 
+    def disponible(self) -> bool:
+        """Para /salud: una búsqueda vacía con el usuario de solo consulta."""
+        try:
+            self._buscar({"size": 0})
+            return True
+        except Exception:
+            return False
+
     def alerta_por_id(self, id_alerta: str) -> Optional[dict[str, Any]]:
         res = self._buscar({"size": 1, "query": {"ids": {"values": [id_alerta]}}})
         golpes = res.get("hits", {}).get("hits", [])

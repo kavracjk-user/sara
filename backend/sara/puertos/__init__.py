@@ -5,9 +5,11 @@ PostgreSQL, Prefect ni de un proveedor externo concreto.
 """
 from __future__ import annotations
 
+from dataclasses import dataclass
+from datetime import datetime
 from typing import Any, Optional, Protocol
 
-from sara.dominio.models import Activo, Caso, Indicador, VistaComun
+from sara.dominio.models import Activo, Caso, Indicador, Nivel, VistaComun
 
 
 class FuenteAlertas(Protocol):
@@ -38,3 +40,28 @@ class RepositorioCasos(Protocol):
     def guardar(self, caso: Caso) -> None: ...
     def obtener(self, id_alerta: str) -> Optional[Caso]: ...
     def listar(self) -> list[Caso]: ...
+
+
+@dataclass(frozen=True)
+class DecisionRegistrada:
+    """Una decisión del analista tal como queda en el expediente (RF-11). El dominio
+    guarda solo la última decisión en `Caso`; el historial con el analista vive aquí."""
+
+    decision: str
+    justificacion: str
+    prioridad_considerada: Nivel
+    analista: Optional[str]
+    registrada_en: datetime
+
+
+class RepositorioExpedientes(RepositorioCasos, Protocol):
+    """Repositorio de casos con historial de decisiones (fase 4)."""
+
+    def decisiones(self, id_alerta: str) -> list[DecisionRegistrada]: ...
+
+    def registrar_decision(self, id_alerta: str, decision: DecisionRegistrada,
+                           t1: datetime) -> None:
+        """Agrega la decisión y fija t1 solo si aún no tenía valor."""
+        ...
+
+    def procedimiento(self, id_alerta: str) -> Optional[str]: ...

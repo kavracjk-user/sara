@@ -1,0 +1,1681 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "SARA — API del analista",
+    "description": "Apoyo a la investigación inicial de alertas. Solo lectura sobre Wazuh; sin contención. La decisión es siempre del analista.",
+    "version": "0.4.0"
+  },
+  "paths": {
+    "/salud": {
+      "get": {
+        "tags": [
+          "sistema"
+        ],
+        "summary": "Salud",
+        "operationId": "salud_salud_get",
+        "parameters": [
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Salud"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespuestaError"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespuestaError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespuestaError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespuestaError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespuestaError"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespuestaError"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespuestaError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        }
+      }
+    },
+    "/investigaciones": {
+      "post": {
+        "tags": [
+          "casos"
+        ],
+        "summary": "Investigar",
+        "operationId": "investigar_investigaciones_post",
+        "parameters": [
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SolicitudInvestigacion"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExpedienteSalida"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespuestaError"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespuestaError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespuestaError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespuestaError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespuestaError"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespuestaError"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespuestaError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        }
+      }
+    },
+    "/casos": {
+      "get": {
+        "tags": [
+          "casos"
+        ],
+        "summary": "Casos",
+        "operationId": "casos_casos_get",
+        "parameters": [
+          {
+            "name": "pagina",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Pagina"
+            }
+          },
+          {
+            "name": "tamano",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Tamano"
+            }
+          },
+          {
+            "name": "prioridad",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "Alta",
+                    "Media",
+                    "Baja",
+                    "Información insuficiente"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Prioridad"
+            }
+          },
+          {
+            "name": "con_decision",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Con Decision"
+            }
+          },
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListaCasos"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespuestaError"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespuestaError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespuestaError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespuestaError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespuestaError"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespuestaError"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespuestaError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        }
+      }
+    },
+    "/casos/{id_caso}": {
+      "get": {
+        "tags": [
+          "casos"
+        ],
+        "summary": "Expediente",
+        "operationId": "expediente_casos__id_caso__get",
+        "parameters": [
+          {
+            "name": "id_caso",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{1,64}$",
+              "description": "_id de la alerta en el índice de Wazuh",
+              "title": "Id Caso"
+            },
+            "description": "_id de la alerta en el índice de Wazuh"
+          },
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExpedienteSalida"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespuestaError"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespuestaError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespuestaError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespuestaError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespuestaError"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespuestaError"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespuestaError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        }
+      }
+    },
+    "/casos/{id_caso}/decision": {
+      "post": {
+        "tags": [
+          "casos"
+        ],
+        "summary": "Decidir",
+        "operationId": "decidir_casos__id_caso__decision_post",
+        "parameters": [
+          {
+            "name": "id_caso",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{1,64}$",
+              "description": "_id de la alerta en el índice de Wazuh",
+              "title": "Id Caso"
+            },
+            "description": "_id de la alerta en el índice de Wazuh"
+          },
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SolicitudDecision"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExpedienteSalida"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespuestaError"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespuestaError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespuestaError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespuestaError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespuestaError"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespuestaError"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespuestaError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        }
+      }
+    },
+    "/exportacion": {
+      "get": {
+        "tags": [
+          "evaluación"
+        ],
+        "summary": "Exportacion",
+        "operationId": "exportacion_exportacion_get",
+        "parameters": [
+          {
+            "name": "formato",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "json",
+                "csv"
+              ],
+              "type": "string",
+              "default": "json",
+              "title": "Formato"
+            }
+          },
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Exportacion"
+                }
+              },
+              "text/csv": {}
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespuestaError"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespuestaError"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespuestaError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespuestaError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespuestaError"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespuestaError"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespuestaError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Alerta": {
+        "properties": {
+          "tipo_alerta": {
+            "type": "string",
+            "title": "Tipo Alerta"
+          },
+          "marca_tiempo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Marca Tiempo"
+          },
+          "regla_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Regla Id"
+          },
+          "regla_nivel": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Regla Nivel"
+          },
+          "regla_descripcion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Regla Descripcion"
+          },
+          "agente_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agente Id"
+          },
+          "agente_nombre": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agente Nombre"
+          },
+          "ip_origen": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ip Origen"
+          },
+          "ip_destino": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ip Destino"
+          },
+          "usuario": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Usuario"
+          },
+          "dominio": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dominio"
+          },
+          "archivo_ruta": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Archivo Ruta"
+          },
+          "archivo_hash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Archivo Hash"
+          },
+          "evento": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evento"
+          },
+          "campos_ausentes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Campos Ausentes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tipo_alerta",
+          "marca_tiempo",
+          "regla_id",
+          "regla_nivel",
+          "regla_descripcion",
+          "agente_id",
+          "agente_nombre",
+          "ip_origen",
+          "ip_destino",
+          "usuario",
+          "dominio",
+          "archivo_ruta",
+          "archivo_hash",
+          "evento",
+          "campos_ausentes"
+        ],
+        "title": "Alerta"
+      },
+      "CuerpoError": {
+        "properties": {
+          "codigo": {
+            "type": "string",
+            "title": "Codigo"
+          },
+          "mensaje": {
+            "type": "string",
+            "title": "Mensaje"
+          },
+          "detalles": {
+            "items": {
+              "$ref": "#/components/schemas/DetalleError"
+            },
+            "type": "array",
+            "title": "Detalles",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "codigo",
+          "mensaje"
+        ],
+        "title": "CuerpoError"
+      },
+      "DatoEvidencia": {
+        "properties": {
+          "dato": {
+            "type": "string",
+            "title": "Dato"
+          },
+          "valor": {
+            "title": "Valor"
+          },
+          "procedencia": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Procedencia"
+          }
+        },
+        "type": "object",
+        "required": [
+          "dato",
+          "valor",
+          "procedencia"
+        ],
+        "title": "DatoEvidencia"
+      },
+      "DecisionSalida": {
+        "properties": {
+          "decision": {
+            "type": "string",
+            "title": "Decision"
+          },
+          "justificacion": {
+            "type": "string",
+            "title": "Justificacion"
+          },
+          "prioridad_considerada": {
+            "type": "string",
+            "title": "Prioridad Considerada"
+          },
+          "analista": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Analista"
+          },
+          "registrada_en": {
+            "type": "string",
+            "title": "Registrada En"
+          }
+        },
+        "type": "object",
+        "required": [
+          "decision",
+          "justificacion",
+          "prioridad_considerada",
+          "analista",
+          "registrada_en"
+        ],
+        "title": "DecisionSalida"
+      },
+      "DetalleError": {
+        "properties": {
+          "campo": {
+            "type": "string",
+            "title": "Campo"
+          },
+          "problema": {
+            "type": "string",
+            "title": "Problema"
+          }
+        },
+        "type": "object",
+        "required": [
+          "campo",
+          "problema"
+        ],
+        "title": "DetalleError"
+      },
+      "ExpedienteSalida": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "t0": {
+            "type": "string",
+            "title": "T0"
+          },
+          "t1": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "T1"
+          },
+          "minutos_hasta_decision": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Minutos Hasta Decision"
+          },
+          "alerta": {
+            "$ref": "#/components/schemas/Alerta"
+          },
+          "evidencia": {
+            "items": {
+              "$ref": "#/components/schemas/DatoEvidencia"
+            },
+            "type": "array",
+            "title": "Evidencia"
+          },
+          "indicadores": {
+            "items": {
+              "$ref": "#/components/schemas/IndicadorSalida"
+            },
+            "type": "array",
+            "title": "Indicadores"
+          },
+          "pasos": {
+            "items": {
+              "$ref": "#/components/schemas/PasoSalida"
+            },
+            "type": "array",
+            "title": "Pasos"
+          },
+          "alertas_relacionadas": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Alertas Relacionadas"
+          },
+          "prioridad": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PrioridadSalida"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "decisiones": {
+            "items": {
+              "$ref": "#/components/schemas/DecisionSalida"
+            },
+            "type": "array",
+            "title": "Decisiones"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "t0",
+          "t1",
+          "minutos_hasta_decision",
+          "alerta",
+          "evidencia",
+          "indicadores",
+          "pasos",
+          "alertas_relacionadas",
+          "prioridad",
+          "decisiones"
+        ],
+        "title": "ExpedienteSalida"
+      },
+      "Exportacion": {
+        "properties": {
+          "casos": {
+            "items": {
+              "$ref": "#/components/schemas/FilaExportacion"
+            },
+            "type": "array",
+            "title": "Casos"
+          }
+        },
+        "type": "object",
+        "required": [
+          "casos"
+        ],
+        "title": "Exportacion"
+      },
+      "FilaExportacion": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "tipo_alerta": {
+            "type": "string",
+            "title": "Tipo Alerta"
+          },
+          "procedimiento": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Procedimiento"
+          },
+          "t0": {
+            "type": "string",
+            "title": "T0"
+          },
+          "t1": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "T1"
+          },
+          "minutos_hasta_decision": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Minutos Hasta Decision"
+          },
+          "prioridad_sugerida": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prioridad Sugerida"
+          },
+          "decision": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decision"
+          },
+          "prioridad_considerada": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prioridad Considerada"
+          },
+          "completitud": {
+            "type": "number",
+            "title": "Completitud"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "tipo_alerta",
+          "procedimiento",
+          "t0",
+          "t1",
+          "minutos_hasta_decision",
+          "prioridad_sugerida",
+          "decision",
+          "prioridad_considerada",
+          "completitud"
+        ],
+        "title": "FilaExportacion"
+      },
+      "IndicadorSalida": {
+        "properties": {
+          "tipo": {
+            "type": "string",
+            "title": "Tipo"
+          },
+          "valor": {
+            "type": "string",
+            "title": "Valor"
+          },
+          "origen_campo": {
+            "type": "string",
+            "title": "Origen Campo"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tipo",
+          "valor",
+          "origen_campo"
+        ],
+        "title": "IndicadorSalida"
+      },
+      "ListaCasos": {
+        "properties": {
+          "pagina": {
+            "type": "integer",
+            "title": "Pagina"
+          },
+          "tamano": {
+            "type": "integer",
+            "title": "Tamano"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "casos": {
+            "items": {
+              "$ref": "#/components/schemas/ResumenCaso"
+            },
+            "type": "array",
+            "title": "Casos"
+          }
+        },
+        "type": "object",
+        "required": [
+          "pagina",
+          "tamano",
+          "total",
+          "casos"
+        ],
+        "title": "ListaCasos"
+      },
+      "PasoSalida": {
+        "properties": {
+          "paso": {
+            "type": "string",
+            "title": "Paso"
+          },
+          "estado": {
+            "type": "string",
+            "enum": [
+              "con_resultado",
+              "sin_resultado",
+              "fallido",
+              "no_aplicable"
+            ],
+            "title": "Estado"
+          },
+          "inicio": {
+            "type": "string",
+            "title": "Inicio"
+          },
+          "fin": {
+            "type": "string",
+            "title": "Fin"
+          },
+          "reintentos": {
+            "type": "integer",
+            "title": "Reintentos"
+          },
+          "fuente": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fuente"
+          },
+          "procedencia": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Procedencia"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          }
+        },
+        "type": "object",
+        "required": [
+          "paso",
+          "estado",
+          "inicio",
+          "fin",
+          "reintentos",
+          "fuente",
+          "procedencia",
+          "error"
+        ],
+        "title": "PasoSalida"
+      },
+      "PrioridadSalida": {
+        "properties": {
+          "nivel": {
+            "type": "string",
+            "title": "Nivel"
+          },
+          "motivos": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Motivos"
+          },
+          "nivel_alerta": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nivel Alerta"
+          },
+          "importancia": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Importancia"
+          },
+          "corroborada": {
+            "type": "boolean",
+            "title": "Corroborada"
+          }
+        },
+        "type": "object",
+        "required": [
+          "nivel",
+          "motivos",
+          "nivel_alerta",
+          "importancia",
+          "corroborada"
+        ],
+        "title": "PrioridadSalida"
+      },
+      "RespuestaError": {
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/CuerpoError"
+          }
+        },
+        "type": "object",
+        "required": [
+          "error"
+        ],
+        "title": "RespuestaError"
+      },
+      "ResumenCaso": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "tipo_alerta": {
+            "type": "string",
+            "title": "Tipo Alerta"
+          },
+          "regla_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Regla Id"
+          },
+          "regla_nivel": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Regla Nivel"
+          },
+          "agente_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agente Id"
+          },
+          "agente_nombre": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agente Nombre"
+          },
+          "prioridad_sugerida": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prioridad Sugerida"
+          },
+          "tiene_decision": {
+            "type": "boolean",
+            "title": "Tiene Decision"
+          },
+          "decision": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decision"
+          },
+          "t0": {
+            "type": "string",
+            "title": "T0"
+          },
+          "t1": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "T1"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "tipo_alerta",
+          "regla_id",
+          "regla_nivel",
+          "agente_id",
+          "agente_nombre",
+          "prioridad_sugerida",
+          "tiene_decision",
+          "decision",
+          "t0",
+          "t1"
+        ],
+        "title": "ResumenCaso"
+      },
+      "Salud": {
+        "properties": {
+          "estado": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "degradado"
+            ],
+            "title": "Estado"
+          },
+          "dependencias": {
+            "additionalProperties": {
+              "type": "string",
+              "enum": [
+                "disponible",
+                "no disponible"
+              ]
+            },
+            "type": "object",
+            "title": "Dependencias"
+          }
+        },
+        "type": "object",
+        "required": [
+          "estado",
+          "dependencias"
+        ],
+        "title": "Salud"
+      },
+      "SolicitudDecision": {
+        "properties": {
+          "decision": {
+            "type": "string",
+            "enum": [
+              "escalar",
+              "descartar",
+              "solicitar_mas_informacion"
+            ],
+            "title": "Decision"
+          },
+          "justificacion": {
+            "type": "string",
+            "maxLength": 2000,
+            "title": "Justificacion",
+            "description": "Obligatoria, no vacía"
+          },
+          "prioridad_considerada": {
+            "type": "string",
+            "enum": [
+              "Alta",
+              "Media",
+              "Baja",
+              "Información insuficiente"
+            ],
+            "title": "Prioridad Considerada"
+          },
+          "analista": {
+            "type": "string",
+            "maxLength": 100,
+            "title": "Analista",
+            "description": "Seudónimo en el piloto (RNF-03)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "decision",
+          "justificacion",
+          "prioridad_considerada",
+          "analista"
+        ],
+        "title": "SolicitudDecision"
+      },
+      "SolicitudInvestigacion": {
+        "properties": {
+          "id_alerta": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]{1,64}$",
+            "title": "Id Alerta",
+            "description": "_id de la alerta en el índice"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id_alerta"
+        ],
+        "title": "SolicitudInvestigacion"
+      }
+    }
+  }
+}
