@@ -1,0 +1,7 @@
+.venv
+.prefect
+**/__pycache__
+.pytest_cache
+tests
+scripts
+*.pyc

@@ -1,8 +1,8 @@
-# SARA — laboratorio. Fase 0: solo PostgreSQL.
-# Fases siguientes agregan: wazuh (fase 1), prefect y sara-worker (fase 3),
-# sara-api (fase 4) y sara-web (fase 5).
+# SARA — aplicación. PostgreSQL (fase 0) y API (fase 4). Wazuh vive aparte, en
+# lab/wazuh/docker-compose.yml (solo se lee). La interfaz (fase 5) se agregará aquí.
 # Uso:  cp .env.example .env   # y edita las claves
 #       docker compose up -d postgres
+#       docker compose --profile api up -d --build api   # requiere API_KEY_SARA propia en .env
 services:
   postgres:
     image: postgres:16
@@ -22,6 +22,36 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
+
+  api:
+    build: ./backend
+    profiles: ["api"]        # no arranca con un `up` normal; usar --profile api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    # Solo las variables que la API usa (no env_file: pasaría también las claves de
+    # administración de Wazuh, que la API no necesita).
+    environment:
+      # Sin clave, la API responde 503 a todo (no atiende sin autenticación).
+      API_KEY_SARA: ${API_KEY_SARA:-}
+      SARA_CORS_ORIGEN: ${SARA_CORS_ORIGEN:-http://localhost:5173}
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      # Wazuh publica el indexador en 127.0.0.1:9200 del equipo; desde el contenedor
+      # se llega por host.docker.internal y el certificado se valida contra su nombre.
+      WAZUH_INDEXER_URL: https://host.docker.internal:9200
+      WAZUH_INDEXER_USER: ${WAZUH_INDEXER_USER}
+      WAZUH_INDEXER_PASS: ${WAZUH_INDEXER_PASS}
+      WAZUH_INDEXER_TLS_NOMBRE: ${WAZUH_INDEXER_TLS_NOMBRE:-wazuh.indexer}
+      WAZUH_CA_CERT: /certs/root-ca.pem
+    volumes:
+      - ./lab/wazuh/config/wazuh_indexer_ssl_certs/root-ca.pem:/certs/root-ca.pem:ro
+    ports:
+      - "127.0.0.1:8000:8000"   # solo accesible desde este equipo
 
 volumes:
   sara_pgdata:
