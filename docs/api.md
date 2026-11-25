@@ -90,7 +90,11 @@ Expediente completo.
   "pasos": [{"paso": "P1_lectura_alerta", "estado": "con_resultado", "inicio": "...",
              "fin": "...", "reintentos": 0, "fuente": "wazuh_indexer",
              "procedencia": "consulta de solo lectura", "error": null}],
-  "alertas_relacionadas": ["..."],
+  "alertas_relacionadas": [{"id": "...", "regla_id": "5760",
+                            "regla_descripcion": "sshd: authentication failed.",
+                            "regla_nivel": 5, "marca_tiempo": "2026-11-18T04:52:36.081Z",
+                            "agente_nombre": "srv-web"}],
+  "total_relacionadas": 73,
   "prioridad": {"nivel": "Alta", "motivos": ["..."], "nivel_alerta": "Medio",
                 "importancia": "Alta", "corroborada": true},
   "decisiones": [{"decision": "escalar", "justificacion": "...",
@@ -103,6 +107,12 @@ Expediente completo.
 que SARA leyó la alerta del índice (fin del paso `P1_lectura_alerta`); la llevan todos
 los datos, también los «no disponibles». Es `null` solo si el caso no pasó por P1 (no
 ocurre con casos creados por el flujo). `decisiones` va de la más antigua a la más reciente.
+
+`alertas_relacionadas`: alertas que comparten IP de origen o agente con la del caso en
+±1 h (sin la propia). Se guardan al investigar y se releen tal como se guardaron: hasta
+**50**, ordenadas por `marca_tiempo` ascendente. `total_relacionadas` es el total real
+(puede ser mayor que 50). Si la búsqueda de relacionadas falló, la lista está vacía y el
+paso `P4_alertas_relacionadas` aparece como `fallido`.
 
 | Código | Cuándo |
 |---|---|

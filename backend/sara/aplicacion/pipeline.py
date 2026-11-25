@@ -78,9 +78,11 @@ def investigar(
     if buscar_relacionadas is not None:
         p4b = ejecutar_paso("P4_alertas_relacionadas",
                             lambda: buscar_relacionadas(caso.vista),
-                            fuente="wazuh_indexer", procedencia="consulta de solo lectura")
+                            fuente="wazuh_indexer", procedencia="consulta de solo lectura",
+                            es_vacio=lambda r: r is None or len(r) == 0)
         caso.pasos.append(p4b)
         if p4b.estado is Estado.CON_RESULTADO:
+            # Lista de ids o AlertasRelacionadas (que itera sus ids).
             caso.alertas_relacionadas = list(p4b.resultado)
 
     # P5. Prioridad sugerida

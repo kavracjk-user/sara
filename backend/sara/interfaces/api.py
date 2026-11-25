@@ -120,6 +120,15 @@ class DecisionSalida(BaseModel):
     registrada_en: str
 
 
+class RelacionadaSalida(BaseModel):
+    id: str = Field(description="_id de la alerta en el índice")
+    regla_id: Optional[str]
+    regla_descripcion: Optional[str]
+    regla_nivel: Optional[int]
+    marca_tiempo: Optional[str]
+    agente_nombre: Optional[str]
+
+
 class ExpedienteSalida(BaseModel):
     id: str
     t0: str
@@ -129,7 +138,9 @@ class ExpedienteSalida(BaseModel):
     evidencia: list[DatoEvidencia]
     indicadores: list[IndicadorSalida]
     pasos: list[PasoSalida]
-    alertas_relacionadas: list[str]
+    alertas_relacionadas: list[RelacionadaSalida] = Field(
+        description="Hasta 50, ordenadas por marca de tiempo")
+    total_relacionadas: int = Field(description="Total real (puede ser mayor que 50)")
     prioridad: Optional[PrioridadSalida]
     decisiones: list[DecisionSalida]
 
@@ -309,7 +320,11 @@ def crear_app(cfg: ConfiguracionAPI) -> FastAPI:
                        "reintentos": p.reintentos, "fuente": p.fuente,
                        "procedencia": p.procedencia,
                        "error": cfg.ocultar(p.error) if p.error else None} for p in c.pasos],
-            "alertas_relacionadas": list(c.alertas_relacionadas),
+            "alertas_relacionadas": [{
+                "id": a.id, "regla_id": a.regla_id, "regla_descripcion": a.regla_descripcion,
+                "regla_nivel": a.regla_nivel, "marca_tiempo": a.marca_tiempo,
+                "agente_nombre": a.agente_nombre} for a in exp.relacionadas.alertas],
+            "total_relacionadas": exp.relacionadas.total,
             "prioridad": None if c.prioridad is None else {
                 "nivel": c.prioridad.nivel.value, "motivos": list(c.prioridad.motivos),
                 "nivel_alerta": c.prioridad.nivel_alerta.value if c.prioridad.nivel_alerta else None,

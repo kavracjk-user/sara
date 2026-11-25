@@ -57,6 +57,14 @@ class RepoMemoria:
     def procedimiento(self, id_alerta):
         return "sara" if id_alerta in self.casos else None
 
+    def relacionadas_de(self, id_alerta):
+        from sara.puertos import AlertasRelacionadas
+        caso = self.casos.get(id_alerta)
+        p4 = next((p for p in (caso.pasos if caso else []) if p.paso == "P4_alertas_relacionadas"
+                   and p.estado is Estado.CON_RESULTADO), None)
+        r = p4.resultado if p4 else None
+        return r if isinstance(r, AlertasRelacionadas) else AlertasRelacionadas(0)
+
 
 class Mundo:
     """Índice falso con alertas reales + repositorio en memoria."""
@@ -65,6 +73,7 @@ class Mundo:
         self.docs = {d["_id"]: d for d in docs}
         self.repo = RepoMemoria()
         self.error_lectura, self.error_paso = error_lectura, error_paso
+        self.relacionadas_fijas = []
 
     def investigar(self, id_alerta):
         inicio = ahora()
@@ -79,7 +88,7 @@ class Mundo:
         def relacionadas(_v):
             if self.error_paso:
                 raise ConnectionError(self.error_paso)
-            return []
+            return self.relacionadas_fijas
 
         caso = pipeline_investigar(doc, CATALOGO, normalizar, buscar_relacionadas=relacionadas,
                                    id_alerta=id_alerta)
@@ -369,3 +378,23 @@ def test_cada_evidencia_lleva_la_hora_de_lectura_en_utc(mundo):
     no_disp = [d for d in e["evidencia"] if d["valor"] == "dato no disponible"]
     assert no_disp and all(d["obtenida_en"] == esperado for d in no_disp)
     assert esperado.endswith("+00:00")
+
+
+# ---------- alertas relacionadas con detalle ----------
+def test_relacionadas_con_detalle_hasta_50_y_total(mundo):
+    from sara.puertos import AlertasRelacionadas, ResumenAlerta
+    alertas = tuple(ResumenAlerta(f"rel-{i:03d}", "5760", "sshd: authentication failed.", 5,
+                                  f"2026-11-18T04:52:{i % 60:02d}.000Z", "srv-web")
+                    for i in range(50))
+    mundo.relacionadas_fijas = AlertasRelacionadas(73, alertas)
+    e = crear(cliente(mundo), cargar("auth_5760")["_id"])
+    assert e["total_relacionadas"] == 73 and len(e["alertas_relacionadas"]) == 50
+    assert e["alertas_relacionadas"][0] == {
+        "id": "rel-000", "regla_id": "5760", "regla_descripcion": "sshd: authentication failed.",
+        "regla_nivel": 5, "marca_tiempo": "2026-11-18T04:52:00.000Z", "agente_nombre": "srv-web"}
+    assert e["prioridad"]["corroborada"] is True
+
+
+def test_sin_relacionadas_total_cero(mundo):
+    e = crear(cliente(mundo), cargar("fim_550")["_id"])
+    assert e["alertas_relacionadas"] == [] and e["total_relacionadas"] == 0

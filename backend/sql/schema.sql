@@ -35,6 +35,7 @@ CREATE TABLE IF NOT EXISTS caso (
                        CHECK (procedimiento IN ('sara', 'manual')),  -- línea base y evaluación
     t0                 TIMESTAMPTZ NOT NULL,     -- alerta disponible para el analista
     t1                 TIMESTAMPTZ,              -- primera decisión humana
+    total_relacionadas INTEGER,                  -- fase 4b: total real (se guardan hasta 50)
     CHECK (t1 IS NULL OR t1 >= t0)
 );
 
@@ -45,6 +46,21 @@ CREATE TABLE IF NOT EXISTS indicador (
     valor        TEXT NOT NULL,
     origen_campo TEXT NOT NULL,
     UNIQUE (id_caso, tipo, valor)
+);
+
+-- Alertas relacionadas tal como se vieron al investigar (fase 4b): hasta 50 por caso,
+-- en el orden de su marca de tiempo.
+CREATE TABLE IF NOT EXISTS alerta_relacionada (
+    id_caso            BIGINT NOT NULL REFERENCES caso(id_caso) ON DELETE CASCADE,
+    orden              INTEGER NOT NULL,
+    id_alerta          TEXT NOT NULL,            -- _id en el indexador de Wazuh
+    regla_id           TEXT,
+    regla_descripcion  TEXT,
+    regla_nivel        INTEGER,
+    marca_tiempo       TIMESTAMPTZ,
+    agente_nombre      TEXT,
+    PRIMARY KEY (id_caso, orden),
+    UNIQUE (id_caso, id_alerta)
 );
 
 -- Un resultado negativo, una falla y un dato no aplicable son estados distintos (RNF-07).

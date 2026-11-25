@@ -59,7 +59,13 @@ def test_recorrido_completo_con_alerta_real(api, indexador):
     assert e["alerta"]["regla_id"] == "5763"
     assert e["pasos"][0]["paso"] == "P1_lectura_alerta"
     assert e["pasos"][0]["estado"] == "con_resultado"
-    assert id_caso not in e["alertas_relacionadas"]
+    rel = e["alertas_relacionadas"]
+    assert id_caso not in [a["id"] for a in rel]
+    assert rel and len(rel) <= 50 and e["total_relacionadas"] >= len(rel)
+    assert [a["marca_tiempo"] for a in rel] == sorted(a["marca_tiempo"] for a in rel)
+    assert all(a["regla_id"] and a["agente_nombre"] for a in rel)
+    releido = cliente.get(f"/casos/{id_caso}", headers=cabecera).json()
+    assert releido["alertas_relacionadas"] == rel           # se relee tal como se guardó
     assert all(d["procedencia"] for d in e["evidencia"] if d["valor"] != "dato no disponible")
     fin_p1 = e["pasos"][0]["fin"]                      # RNF-05: hora de lectura en UTC
     from datetime import datetime, timezone

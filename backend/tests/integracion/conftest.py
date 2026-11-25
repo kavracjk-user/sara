@@ -121,9 +121,13 @@ class _ConectarPG:
     def __init__(self, env: dict[str, str]) -> None:
         self.__env = env
 
-    def __call__(self):
+    def __call__(self, **kw):
         from sara.adaptadores.postgres import conexion
-        return conexion.conectar(self.__env)
+        return conexion.conectar(self.__env, **kw)
+
+    def a_base(self, nombre: str) -> "_ConectarPG":
+        """Misma conexión a otra base del mismo servidor (pruebas de migraciones)."""
+        return _ConectarPG({**self.__env, "POSTGRES_DB": nombre})
 
     def __repr__(self) -> str:
         return "<conexión PostgreSQL de SARA (credenciales ocultas)>"

@@ -155,9 +155,18 @@ class IndexadorFalso(ix.IndexadorWazuh):
 def test_relacionadas_excluye_la_propia_alerta_por_su_id_del_indice():
     doc = cargar("red_86601_suricata")
     v = normalizar(doc)
-    falso = IndexadorFalso({"hits": {"hits": [{"_id": "otra-1"}]}})
-    assert falso.relacionadas(v) == ["otra-1"]
-    q = falso.consultas[0]["query"]["bool"]
+    falso = IndexadorFalso({"hits": {"total": {"value": 73}, "hits": [{"_id": "otra-1",
+        "_source": {"rule": {"id": "5760", "description": "sshd: authentication failed.",
+                             "level": 5},
+                    "@timestamp": "2026-11-18T04:52:36.081Z",
+                    "agent": {"name": "srv-web"}}}]}})
+    r = falso.relacionadas(v)
+    assert r.ids == ["otra-1"] and r.total == 73 and "otra-1" in r and len(r) == 1
+    assert r.alertas[0].regla_nivel == 5 and r.alertas[0].agente_nombre == "srv-web"
+    consulta = falso.consultas[0]
+    assert consulta["size"] == 50 and consulta["sort"] == [{"@timestamp": "asc"}]
+    assert consulta["track_total_hits"] is True
+    q = consulta["query"]["bool"]
     assert q["must_not"] == [{"ids": {"values": [doc["_id"]]}}]
     assert {"term": {"data.srcip": "10.10.0.11"}} in q["should"]
     assert {"term": {"data.src_ip": "10.10.0.11"}} in q["should"]
@@ -196,3 +205,12 @@ def test_fixtures_solo_datos_del_laboratorio(nombre):
     usuarios = {doc.get("data", {}).get(k) for k in ("srcuser", "dstuser")} - {None}
     assert usuarios <= {"operador", "ana.lab", "luis.lab"}
     assert doc["agent"]["name"] in {"srv-web", "srv-bd", "pc-analista", "pc-lab-01", "pc-nuevo"}
+
+
+def test_p4_sin_alertas_relacionadas_es_sin_resultado():
+    from sara.puertos import AlertasRelacionadas
+    doc = cargar("fim_550")
+    caso = pipeline.investigar(doc, {}, normalizar,
+                               buscar_relacionadas=lambda v: AlertasRelacionadas(0))
+    p4 = next(p for p in caso.pasos if p.paso == "P4_alertas_relacionadas")
+    assert p4.estado.value == "sin_resultado" and caso.alertas_relacionadas == []

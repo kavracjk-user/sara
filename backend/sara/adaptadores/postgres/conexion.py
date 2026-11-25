@@ -23,5 +23,5 @@ def parametros(env: Optional[Mapping[str, str]] = None) -> dict[str, str]:
     }
 
 
-def conectar(env: Optional[Mapping[str, str]] = None) -> psycopg.Connection:
-    return psycopg.connect(**parametros(env), connect_timeout=10)
+def conectar(env: Optional[Mapping[str, str]] = None, **kw) -> psycopg.Connection:
+    return psycopg.connect(**parametros(env), connect_timeout=10, **kw)

@@ -19,6 +19,7 @@ import urllib.request
 from typing import Any, Optional
 
 from sara.adaptadores.wazuh.normalizer import MAPA_CAMPOS
+from sara.puertos import MAX_RELACIONADAS, AlertasRelacionadas, ResumenAlerta
 from sara.adaptadores.wazuh.tls import abridor, contexto_tls
 from sara.dominio.models import VistaComun
 
@@ -82,10 +83,10 @@ class IndexadorWazuh:
         return salida
 
     def relacionadas(self, vista: VistaComun, ventana: str = "1h",
-                     maximo: int = 20) -> list[str]:
-        """`_id` de las alertas que comparten IP de origen o agente dentro de la ventana
-        (la ventana definitiva se fija y documenta en 4.5.2). La propia alerta se
-        excluye por su `_id` del índice, el mismo identificador que usa toda SARA."""
+                     maximo: int = MAX_RELACIONADAS) -> AlertasRelacionadas:
+        """Alertas que comparten IP de origen o agente dentro de la ventana (la ventana
+        definitiva se fija y documenta en 4.5.2): hasta `maximo`, ordenadas por marca de
+        tiempo, con el total real. La propia alerta se excluye por su `_id` del índice."""
         if not vista.marca_tiempo:
             raise ValueError("No hay marca de tiempo para acotar la ventana.")
         if not vista.id_alerta:
@@ -97,9 +98,12 @@ class IndexadorWazuh:
         if vista.agente_id:
             compartidos.append({"term": {"agent.id": vista.agente_id}})
         if not compartidos:
-            return []
+            return AlertasRelacionadas(0)
         res = self._buscar({
-            "size": maximo, "_source": False,
+            "size": maximo, "track_total_hits": True,
+            "sort": [{"@timestamp": "asc"}],
+            "_source": ["rule.id", "rule.description", "rule.level", "@timestamp",
+                        "agent.name"],
             "query": {"bool": {
                 "must_not": [{"ids": {"values": [vista.id_alerta]}}],
                 "should": compartidos, "minimum_should_match": 1,
@@ -107,4 +111,19 @@ class IndexadorWazuh:
                     "gte": f"{vista.marca_tiempo}||-{ventana}",
                     "lte": f"{vista.marca_tiempo}||+{ventana}"}}}]}},
         })
-        return [h["_id"] for h in res.get("hits", {}).get("hits", [])]
+        golpes = res.get("hits", {}).get("hits", [])
+        total = res.get("hits", {}).get("total", {})
+        total = total.get("value", len(golpes)) if isinstance(total, dict) else int(total or 0)
+        return AlertasRelacionadas(total, tuple(_resumen(h) for h in golpes))
+
+
+def _resumen(golpe: dict[str, Any]) -> ResumenAlerta:
+    fuente = golpe.get("_source", {}) or {}
+    regla = fuente.get("rule", {}) or {}
+    nivel = regla.get("level")
+    return ResumenAlerta(
+        id=golpe["_id"], regla_id=None if regla.get("id") is None else str(regla["id"]),
+        regla_descripcion=regla.get("description"),
+        regla_nivel=int(nivel) if isinstance(nivel, (int, str)) and str(nivel).isdigit() else None,
+        marca_tiempo=fuente.get("@timestamp"),
+        agente_nombre=(fuente.get("agent", {}) or {}).get("name"))

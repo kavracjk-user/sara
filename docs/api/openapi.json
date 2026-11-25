@@ -1145,10 +1145,16 @@
           },
           "alertas_relacionadas": {
             "items": {
-              "type": "string"
+              "$ref": "#/components/schemas/RelacionadaSalida"
             },
             "type": "array",
-            "title": "Alertas Relacionadas"
+            "title": "Alertas Relacionadas",
+            "description": "Hasta 50, ordenadas por marca de tiempo"
+          },
+          "total_relacionadas": {
+            "type": "integer",
+            "title": "Total Relacionadas",
+            "description": "Total real (puede ser mayor que 50)"
           },
           "prioridad": {
             "anyOf": [
@@ -1179,6 +1185,7 @@
           "indicadores",
           "pasos",
           "alertas_relacionadas",
+          "total_relacionadas",
           "prioridad",
           "decisiones"
         ],
@@ -1478,6 +1485,80 @@
           "corroborada"
         ],
         "title": "PrioridadSalida"
+      },
+      "RelacionadaSalida": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "_id de la alerta en el índice"
+          },
+          "regla_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Regla Id"
+          },
+          "regla_descripcion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Regla Descripcion"
+          },
+          "regla_nivel": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Regla Nivel"
+          },
+          "marca_tiempo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Marca Tiempo"
+          },
+          "agente_nombre": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agente Nombre"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "regla_id",
+          "regla_descripcion",
+          "regla_nivel",
+          "marca_tiempo",
+          "agente_nombre"
+        ],
+        "title": "RelacionadaSalida"
       },
       "RespuestaError": {
         "properties": {

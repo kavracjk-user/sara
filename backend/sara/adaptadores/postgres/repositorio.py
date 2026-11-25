@@ -23,7 +23,8 @@ import psycopg
 from psycopg.types.json import Jsonb
 
 from sara.adaptadores.postgres.serializacion import a_json
-from sara.puertos import DecisionRegistrada
+from sara.puertos import (MAX_RELACIONADAS, AlertasRelacionadas, DecisionRegistrada,
+                          ResumenAlerta)
 from sara.dominio.models import (Caso, Estado, Importancia, Indicador, Nivel, NivelAlerta,
                                  PrioridadSugerida, RegistroPaso, TipoAlerta,
                                  TipoIndicador, VistaComun)
@@ -80,7 +81,8 @@ class RepositorioPostgres:
                  Jsonb(a_json(v.evidencia_minima)), self.procedimiento_por_defecto, caso.t0, caso.t1),
             ).fetchone()[0]
 
-            for tabla in ("indicador", "ejecucion_paso", "prioridad_sugerida"):
+            for tabla in ("indicador", "ejecucion_paso", "prioridad_sugerida",
+                          "alerta_relacionada"):
                 con.execute(f"DELETE FROM {tabla} WHERE id_caso = %s", (id_caso,))
             for i in caso.indicadores:
                 con.execute(
@@ -94,6 +96,16 @@ class RepositorioPostgres:
                     (id_caso, p.paso, p.estado.value, p.inicio, p.fin,
                      None if p.resultado is None else Jsonb(a_json(p.resultado)),
                      p.error, p.reintentos, p.fuente, p.procedencia))
+            rel = _relacionadas_del_caso(caso)
+            con.execute("UPDATE caso SET total_relacionadas = %s WHERE id_caso = %s",
+                        (rel.total if rel is not None else None, id_caso))
+            for orden, a in enumerate((rel.alertas if rel else ())[:MAX_RELACIONADAS], 1):
+                con.execute(
+                    """INSERT INTO alerta_relacionada (id_caso, orden, id_alerta, regla_id,
+                           regla_descripcion, regla_nivel, marca_tiempo, agente_nombre)
+                       VALUES (%s, %s, %s, %s, %s, %s, %s, %s)""",
+                    (id_caso, orden, a.id, a.regla_id, a.regla_descripcion, a.regla_nivel,
+                     a.marca_tiempo, a.agente_nombre))
             if caso.prioridad:
                 pr = caso.prioridad
                 con.execute(
@@ -146,6 +158,10 @@ class RepositorioPostgres:
                 (id_alerta,)).fetchall()
         return [DecisionRegistrada(f[0], f[1], Nivel(f[2]), f[3], f[4]) for f in filas]
 
+    def relacionadas_de(self, id_alerta: str) -> AlertasRelacionadas:
+        with self._conectar() as con:
+            return _leer_relacionadas(con, id_alerta)
+
     def procedimiento(self, id_alerta: str) -> Optional[str]:
         with self._conectar() as con:
             fila = con.execute("SELECT procedimiento FROM caso WHERE id_alerta = %s",
@@ -192,9 +208,7 @@ class RepositorioPostgres:
                 """SELECT paso, estado, inicio, fin, resultado, error, reintentos, fuente,
                           procedencia FROM ejecucion_paso WHERE id_caso = %s
                    ORDER BY id_paso""", (id_caso,)).fetchall()]
-        rel = next((p for p in caso.pasos if p.paso == PASO_RELACIONADAS
-                    and p.estado is Estado.CON_RESULTADO), None)
-        caso.alertas_relacionadas = list(rel.resultado) if rel else []
+        caso.alertas_relacionadas = _leer_relacionadas(con, id_alerta).ids
 
         pr = con.execute(
             """SELECT nivel, nivel_alerta, importancia, corroborada, motivos
@@ -220,3 +234,32 @@ def _iso(valor: Optional[datetime]) -> Optional[str]:
         return None
     utc = valor.astimezone(timezone.utc)
     return utc.strftime("%Y-%m-%dT%H:%M:%S.") + f"{utc.microsecond // 1000:03d}Z"
+
+
+def _relacionadas_del_caso(caso: Caso) -> Optional[AlertasRelacionadas]:
+    """Resultado de P4 tal como lo dejó la investigación. None si P4 no tuvo resultado
+    (falló o no se ejecutó): el total queda NULL, no 0 (RNF-07)."""
+    paso = next((p for p in caso.pasos if p.paso == PASO_RELACIONADAS), None)
+    if paso is None or paso.estado not in (Estado.CON_RESULTADO, Estado.SIN_RESULTADO):
+        return None
+    r = paso.resultado
+    if isinstance(r, AlertasRelacionadas):
+        return r
+    if isinstance(r, dict):                       # releído de JSON
+        return AlertasRelacionadas(int(r.get("total", 0)), tuple(
+            ResumenAlerta(**a) for a in r.get("alertas", [])))
+    ids = list(r or [])                           # lista de ids (sin detalle)
+    return AlertasRelacionadas(len(ids), tuple(ResumenAlerta(i) for i in ids))
+
+
+def _leer_relacionadas(con: psycopg.Connection, id_alerta: str) -> AlertasRelacionadas:
+    fila = con.execute("SELECT id_caso, total_relacionadas FROM caso WHERE id_alerta = %s",
+                       (id_alerta,)).fetchone()
+    if fila is None:
+        return AlertasRelacionadas(0)
+    alertas = tuple(
+        ResumenAlerta(f[0], f[1], f[2], f[3], _iso(f[4]), f[5]) for f in con.execute(
+            """SELECT id_alerta, regla_id, regla_descripcion, regla_nivel, marca_tiempo,
+                      agente_nombre FROM alerta_relacionada WHERE id_caso = %s
+               ORDER BY orden""", (fila[0],)).fetchall())
+    return AlertasRelacionadas(fila[1] if fila[1] is not None else len(alertas), alertas)

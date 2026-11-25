@@ -13,7 +13,7 @@ from typing import Callable, Iterable, Optional
 from sara.aplicacion.pipeline import (PASO_LECTURA, completitud, minutos_hasta_decision,
                                       registrar_decision)
 from sara.dominio.models import Caso, Estado, Nivel, TipoAlerta, ahora
-from sara.puertos import DecisionRegistrada, RepositorioExpedientes
+from sara.puertos import AlertasRelacionadas, DecisionRegistrada, RepositorioExpedientes
 
 MAX_JUSTIFICACION = 2000
 MAX_ANALISTA = 100
@@ -49,6 +49,7 @@ class DependenciaNoDisponible(ErrorCaso):
 class Expediente:
     caso: Caso
     decisiones: list[DecisionRegistrada]
+    relacionadas: AlertasRelacionadas = AlertasRelacionadas(0)
 
     @property
     def minutos_hasta_decision(self) -> Optional[float]:
@@ -102,7 +103,8 @@ class ServicioCasos:
         caso = self._repo.obtener(id_alerta)
         if caso is None:
             raise CasoNoEncontrado("No existe un caso con ese id.")
-        return Expediente(caso, self._repo.decisiones(id_alerta))
+        return Expediente(caso, self._repo.decisiones(id_alerta),
+                          self._repo.relacionadas_de(id_alerta))
 
     def listar(self, pagina: int = 1, tamano: int = 20, prioridad: Optional[Nivel] = None,
                con_decision: Optional[bool] = None) -> Pagina:
