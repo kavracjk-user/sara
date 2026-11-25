@@ -134,8 +134,6 @@ docker compose --profile api up -d --build api
 - La secuencia de `numero_caso` de la base del laboratorio ya avanzó por las pruebas
   (los números no se reutilizan): el primer caso real no será `C-0001`.
 - HTTPS en la propia API (escucha HTTP en 127.0.0.1); rotación de `API_KEY_SARA`.
-- RF-12: el repositorio no tiene ninguna referencia; queda [PENDIENTE — autor] en la
-  tabla «Cobertura del perfil» de `docs/api.md`.
 - `uid 1000` en la imagen depende de con qué usuario generó los certificados
   `wazuh-certs-tool` en esta máquina.
 - Aviso de Starlette: «Using httpx with starlette.testclient is deprecated; install
